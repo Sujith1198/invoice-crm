@@ -1,0 +1,261 @@
+<div class="customer-form-page">
+  <!-- Breadcrumb & Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h4 class="fw-bold text-dark mb-1">{{ isEditMode ? 'Edit Customer' : 'Add New Customer' }}</h4>
+      <p class="text-muted small mb-0">{{ isEditMode ? 'Update contact and billing profile' : 'Register a new customer with multiple phone numbers' }}</p>
+    </div>
+    <a routerLink="/customers" class="btn btn-sm btn-light border">
+      ← Back to Customers
+    </a>
+  </div>
+
+  <!-- Duplicate Customer Warning Alert -->
+  @if (duplicateWarning) {
+    <div class="alert alert-warning border-warning shadow-sm d-flex align-items-center gap-3 mb-4" role="alert">
+      <span class="fs-4">⚠️</span>
+      <div>
+        <strong>Potential Duplicate Customer Detected!</strong>
+        <div class="small">
+          A customer named <strong>{{ duplicateWarning.name }}</strong> with company <strong>{{ duplicateWarning.company_name || 'N/A' }}</strong> and email <strong>{{ duplicateWarning.email }}</strong> already exists in the system.
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (loadingCustomer) {
+    <ui-loading text="Loading customer details..."></ui-loading>
+  } @else {
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+        <form [formGroup]="customerForm" (ngSubmit)="onSubmit()">
+
+          <!-- Section 1: Basic Information -->
+          <h6 class="fw-bold text-dark mb-3 border-bottom pb-2">
+            1. Basic Customer Profile
+          </h6>
+
+          <div class="row g-3 mb-4">
+            <div class="col-12 col-md-6">
+              <label class="form-label">First Name <span class="required-star">*</span></label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Enter first name"
+                formControlName="first_name"
+                [class.is-invalid]="submitted && f['first_name'].errors"
+              />
+              @if (submitted && f['first_name'].errors) {
+                <div class="invalid-feedback">First name is required</div>
+              }
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label">Last Name <span class="required-star">*</span></label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Enter last name"
+                formControlName="last_name"
+                [class.is-invalid]="submitted && f['last_name'].errors"
+              />
+              @if (submitted && f['last_name'].errors) {
+                <div class="invalid-feedback">Last name is required</div>
+              }
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label">Company Name</label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="e.g. Apex Industrial Works Ltd"
+                formControlName="company_name"
+              />
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label">Email Address <span class="required-star">*</span></label>
+              <input
+                type="email"
+                class="form-control"
+                placeholder="e.g. contact@clientcorp.com"
+                formControlName="email"
+                (blur)="checkDuplicate()"
+                [class.is-invalid]="submitted && f['email'].errors"
+              />
+              @if (submitted && f['email'].errors) {
+                <div class="invalid-feedback">Valid email address is required</div>
+              }
+            </div>
+          </div>
+
+          <!-- Section 2: Contact Phone Numbers (Multiple Supported) -->
+          <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+            <h6 class="fw-bold text-dark mb-0">
+              2. Phone Numbers <span class="required-star">*</span>
+            </h6>
+            <button type="button" class="btn btn-sm btn-orange" (click)="addPhone()">
+              <span>➕</span> Add Phone Number
+            </button>
+          </div>
+
+          <div class="mb-4" formArrayName="phones">
+            @for (pGroup of phonesArray.controls; track $index; let idx = $index) {
+              <div [formGroupName]="idx" class="p-3 mb-2 rounded-3 bg-light border border-light-subtle">
+                <div class="row g-2 align-items-center">
+                  <div class="col-12 col-md-5">
+                    <label class="form-label small text-muted">Phone Number</label>
+                    <input
+                      type="text"
+                      class="form-control form-control-sm"
+                      placeholder="e.g. +91 98450 12345"
+                      formControlName="phone_number"
+                      (blur)="checkDuplicate()"
+                      [class.is-invalid]="submitted && pGroup.get('phone_number')?.errors"
+                    />
+                  </div>
+
+                  <div class="col-6 col-md-3">
+                    <label class="form-label small text-muted">Type</label>
+                    <select class="form-select form-select-sm" formControlName="type">
+                      <option value="Mobile">Mobile</option>
+                      <option value="Work">Work / Office</option>
+                      <option value="Home">Home</option>
+                      <option value="Alternate">Alternate</option>
+                    </select>
+                  </div>
+
+                  <div class="col-4 col-md-2 d-flex align-items-center pt-3">
+                    <div class="form-check">
+                      <input
+                        class="form-check-input"
+                        type="radio"
+                        name="primaryPhoneSelect"
+                        [id]="'primaryPhone' + idx"
+                        [checked]="pGroup.get('is_primary')?.value"
+                        (change)="setPrimaryPhone(idx)"
+                      />
+                      <label class="form-check-label small fw-semibold" [for]="'primaryPhone' + idx">
+                        Primary
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="col-2 col-md-2 text-end pt-3">
+                    @if (phonesArray.length > 1) {
+                      <button type="button" class="btn btn-sm btn-outline-danger p-1" (click)="removePhone(idx)" title="Remove this phone">
+                        🗑️
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Section 3: Billing Address & Payment Method -->
+          <h6 class="fw-bold text-dark mb-3 border-bottom pb-2">
+            3. Billing Address & Terms
+          </h6>
+
+          <div class="row g-3 mb-4">
+            <div class="col-12 col-md-6">
+              <label class="form-label">Address Line 1 <span class="required-star">*</span></label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Street address, building, plot no."
+                formControlName="address_line1"
+                [class.is-invalid]="submitted && f['address_line1'].errors"
+              />
+              @if (submitted && f['address_line1'].errors) {
+                <div class="invalid-feedback">Address line 1 is required</div>
+              }
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label">Address Line 2</label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Apartment, suite, landmark (optional)"
+                formControlName="address_line2"
+              />
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">City <span class="required-star">*</span></label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="e.g. Bengaluru"
+                formControlName="city"
+                [class.is-invalid]="submitted && f['city'].errors"
+              />
+              @if (submitted && f['city'].errors) {
+                <div class="invalid-feedback">City is required</div>
+              }
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">Country <span class="required-star">*</span></label>
+              <select class="form-select" formControlName="country">
+                <option value="India">India</option>
+                <option value="United States">United States</option>
+                <option value="United Arab Emirates">United Arab Emirates</option>
+                <option value="Singapore">Singapore</option>
+                <option value="United Kingdom">United Kingdom</option>
+                <option value="Germany">Germany</option>
+                <option value="Australia">Australia</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">Payment Method / Term <span class="required-star">*</span></label>
+              <select class="form-select" formControlName="payment_method">
+                <option value="Daily Pay">Daily Pay</option>
+                <option value="Monthly Pay">Monthly Pay</option>
+                <option value="15 Days Pay">15 Days Pay</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label">Status</label>
+              <select class="form-select" formControlName="status">
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label">Internal Notes</label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Special delivery notes or commercial remarks"
+                formControlName="notes"
+              />
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="d-flex justify-content-end gap-3 pt-3 border-top">
+            <a routerLink="/customers" class="btn btn-light px-4">
+              Cancel
+            </a>
+            <button type="submit" class="btn btn-orange px-4" [disabled]="saving">
+              @if (saving) {
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                Saving Customer...
+              } @else {
+                {{ isEditMode ? 'Update Customer Record' : 'Save Customer Record' }}
+              }
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  }
+</div>

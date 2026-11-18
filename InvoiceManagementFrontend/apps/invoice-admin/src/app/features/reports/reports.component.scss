@@ -1,0 +1,30 @@
+.reports-page {
+  .report-pills .nav-link {
+    color: #555;
+    border-radius: 8px;
+    transition: all 0.15s;
+
+    &.active {
+      background: #FFAB00;
+      color: #242424;
+      font-weight: 700;
+      box-shadow: 0 4px 10px rgba(255, 171, 0, 0.25);
+    }
+  }
+
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    #printable-report, #printable-report * {
+      visibility: visible;
+    }
+    #printable-report {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      box-shadow: none !important;
+    }
+  }
+}

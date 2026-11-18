@@ -1,0 +1,168 @@
+<div class="customer-detail-page">
+  @if (loading) {
+    <ui-loading text="Loading customer profile and invoice history..."></ui-loading>
+  } @else if (customer) {
+    <!-- Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+      <div class="d-flex align-items-center gap-3">
+        <div class="avatar-lg rounded-circle d-flex align-items-center justify-content-center" style="width: 52px; height: 52px; background: #FFF3E0; color: #FF6200; font-size: 22px; font-weight: bold;">
+          {{ customer.first_name.charAt(0) }}
+        </div>
+        <div>
+          <div class="d-flex align-items-center gap-2">
+            <h4 class="fw-bold text-dark mb-0">{{ customer.full_name }}</h4>
+            <span [class]="'badge ' + getBadgeClass(customer.status)">
+              {{ customer.status }}
+            </span>
+          </div>
+          <span class="text-muted small">{{ customer.company_name || 'Individual Customer' }} • {{ customer.city }}, {{ customer.country }}</span>
+        </div>
+      </div>
+      <div class="d-flex gap-2">
+        <a routerLink="/customers" class="btn btn-sm btn-light border">
+          ← Back
+        </a>
+        <a [routerLink]="['/customers/edit', customer.id]" class="btn btn-sm btn-light border">
+          ✏️ Edit Profile
+        </a>
+        <a [routerLink]="['/invoices/generate']" [queryParams]="{ customer_id: customer.id }" class="btn btn-sm btn-orange">
+          ➕ Generate Invoice
+        </a>
+      </div>
+    </div>
+
+    <!-- 4 Financial Metrics for this customer -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm p-3">
+          <span class="text-muted small text-uppercase fw-semibold">Total Invoiced</span>
+          <h4 class="fw-bold text-dark mb-0 mt-1">{{ formatCurrency(metrics?.total_invoiced) }}</h4>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm p-3">
+          <span class="text-muted small text-uppercase fw-semibold">Total Collected</span>
+          <h4 class="fw-bold text-success mb-0 mt-1">{{ formatCurrency(metrics?.total_paid) }}</h4>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm p-3">
+          <span class="text-muted small text-uppercase fw-semibold">Outstanding Balance</span>
+          <h4 class="fw-bold text-danger mb-0 mt-1">{{ formatCurrency(metrics?.outstanding_balance) }}</h4>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm p-3">
+          <span class="text-muted small text-uppercase fw-semibold">Total Invoices</span>
+          <h4 class="fw-bold text-dark mb-0 mt-1">{{ metrics?.invoice_count || 0 }}</h4>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <!-- Contact & Addresses -->
+      <div class="col-12 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-white border-0 pt-4 px-4 pb-2">
+            <h6 class="fw-bold text-dark mb-0">Contact & Address Details</h6>
+          </div>
+          <div class="card-body px-4 py-2">
+            <div class="mb-3">
+              <div class="text-muted small">Email Address</div>
+              <div class="fw-semibold text-dark">{{ customer.email }}</div>
+            </div>
+
+            <div class="mb-3">
+              <div class="text-muted small">Registered Phone Numbers</div>
+              <div class="d-flex flex-column gap-1 mt-1">
+                @for (p of customer.phones || []; track p.id) {
+                  <div class="d-flex justify-content-between align-items-center p-2 rounded bg-light border border-light-subtle small">
+                    <span class="fw-semibold">{{ p.phone_number }}</span>
+                    <div class="d-flex gap-1">
+                      <span class="badge bg-secondary-subtle text-secondary small">{{ p.type }}</span>
+                      @if (p.is_primary) {
+                        <span class="badge bg-warning-subtle text-dark border border-warning small">Primary</span>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <div class="text-muted small">Billing Address</div>
+              <div class="text-dark small">
+                {{ customer.address_line1 }}<br>
+                @if (customer.address_line2) {
+                  {{ customer.address_line2 }}<br>
+                }
+                {{ customer.city }}, {{ customer.country }}
+              </div>
+            </div>
+
+            <div class="mb-2">
+              <div class="text-muted small">Assigned Payment Term</div>
+              <span class="badge bg-light text-dark border mt-1">{{ customer.payment_method }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Customer Invoices History -->
+      <div class="col-12 col-lg-8">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-white border-0 pt-4 px-4 pb-2 d-flex justify-content-between align-items-center">
+            <h6 class="fw-bold text-dark mb-0">Customer Invoices History</h6>
+            <span class="badge bg-light text-dark border">{{ customer.invoices?.length || 0 }} Records</span>
+          </div>
+          <div class="card-body p-0">
+            @if (customer.invoices && customer.invoices.length > 0) {
+              <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                  <thead>
+                    <tr>
+                      <th>Invoice #</th>
+                      <th>Date</th>
+                      <th>Due Date</th>
+                      <th class="text-end">Total</th>
+                      <th class="text-end">Paid</th>
+                      <th class="text-end">Balance</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (inv of customer.invoices; track inv.id) {
+                      <tr>
+                        <td>
+                          <a [routerLink]="['/invoices', inv.id]" class="fw-bold text-decoration-none" style="color: #FF6200;">
+                            {{ inv.invoice_number }}
+                          </a>
+                        </td>
+                        <td>{{ formatDate(inv.invoice_date) }}</td>
+                        <td>{{ formatDate(inv.due_date) }}</td>
+                        <td class="text-end fw-semibold">{{ formatCurrency(inv.grand_total) }}</td>
+                        <td class="text-end text-success">{{ formatCurrency(inv.amount_paid) }}</td>
+                        <td class="text-end fw-bold" [class.text-danger]="inv.balance_due > 0">
+                          {{ formatCurrency(inv.balance_due) }}
+                        </td>
+                        <td>
+                          <span [class]="'badge ' + getBadgeClass(inv.status)">
+                            {{ inv.status }}
+                          </span>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <div class="p-5 text-center text-muted">
+                No invoices have been generated for this customer yet.
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

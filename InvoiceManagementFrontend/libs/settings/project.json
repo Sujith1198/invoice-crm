@@ -1,0 +1,9 @@
+{
+  "name": "settings",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/settings/src",
+  "prefix": "app",
+  "targets": {},
+  "tags": ["scope:settings", "type:feature"]
+}

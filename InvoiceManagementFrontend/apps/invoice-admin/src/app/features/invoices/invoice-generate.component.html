@@ -1,0 +1,592 @@
+<div class="invoice-generate-page pb-5">
+  <!-- Page Header -->
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+      <h4 class="fw-bold text-dark mb-1">{{ isEditMode ? 'Edit Invoice' : 'Generate Tax Invoice' }}</h4>
+      <p class="text-muted small mb-0">Dynamic calculation of line items, GST taxation, discounts, and customer snapshot</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a routerLink="/invoices" class="btn btn-sm btn-light border">
+        ← Invoices List
+      </a>
+      <button type="button" class="btn btn-sm btn-orange-outline" (click)="openPreviewModal()">
+        👁️ Preview
+      </button>
+      <button type="button" class="btn btn-sm btn-light border" (click)="saveAs('Draft')" [disabled]="saving">
+        💾 Save Draft
+      </button>
+      <button type="button" class="btn btn-sm btn-orange" (click)="saveAs('Generated')" [disabled]="saving">
+        ⚡ {{ isEditMode ? 'Update Invoice' : 'Generate & Issue Invoice' }}
+      </button>
+    </div>
+  </div>
+
+  @if (loadingInitial) {
+    <ui-loading text="Initializing invoice sequence and settings..."></ui-loading>
+  } @else {
+    <form [formGroup]="invoiceForm">
+
+      <!-- TOP SECTION: Invoice Metadata & Customer Information -->
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+          <div class="row g-3 mb-4">
+            <!-- Invoice Number -->
+            <div class="col-12 col-md-4">
+              <label class="form-label">Invoice Number <span class="required-star">*</span></label>
+              <div class="input-group">
+                <input
+                  type="text"
+                  class="form-control fw-bold"
+                  style="color: #FF6200; background-color: #FFFDF7;"
+                  formControlName="invoice_number"
+                  placeholder="Auto-generated e.g. 202611180001"
+                  readonly
+                />
+                <button class="btn btn-outline-secondary btn-sm" type="button" (click)="fetchNextNumber()" title="Regenerate Sequence Number">
+                  🔄
+                </button>
+              </div>
+            </div>
+
+            <!-- Invoice Date -->
+            <div class="col-12 col-md-4">
+              <label class="form-label">Invoice Date <span class="required-star">*</span></label>
+              <input
+                type="date"
+                class="form-control"
+                formControlName="invoice_date"
+              />
+            </div>
+
+            <!-- Due Date -->
+            <div class="col-12 col-md-4">
+              <label class="form-label">Due Date <span class="required-star">*</span></label>
+              <input
+                type="date"
+                class="form-control"
+                formControlName="due_date"
+              />
+            </div>
+          </div>
+
+          <!-- CUSTOMER AUTOCOMPLETE SEARCH BAR -->
+          <div class="p-3 mb-4 rounded-3 border" style="background: #FFFDF9; border-color: #FFE0B2 !important;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <label class="form-label fw-bold mb-0 text-dark">
+                🔍 Customer Autocomplete & Quick Autofill
+              </label>
+              <a routerLink="/customers/create" target="_blank" class="small text-decoration-none" style="color: #FF6200;">
+                + New Customer Registry
+              </a>
+            </div>
+            <div class="position-relative">
+              <input
+                type="text"
+                class="form-control autocomplete-trigger"
+                placeholder="Type client name, company, or email to autofill billing details..."
+                [(ngModel)]="customerSearchQuery"
+                [ngModelOptions]="{standalone: true}"
+                (input)="onCustomerSearchInput()"
+                (focus)="showCustomerDropdown = true"
+              />
+
+              @if (showCustomerDropdown && customerSearchResults.length > 0) {
+                <div class="customer-autocomplete-dropdown shadow-lg rounded-3 border mt-1">
+                  @for (cust of customerSearchResults; track cust.id) {
+                    <div class="autocomplete-item p-3 border-bottom" (click)="selectCustomer(cust)">
+                      <div class="d-flex justify-content-between">
+                        <strong class="text-dark">{{ cust.full_name }}</strong>
+                        <span class="badge bg-light text-dark border">{{ cust.payment_method }}</span>
+                      </div>
+                      <div class="small text-muted">
+                        {{ cust.company_name || 'Individual' }} • {{ cust.primary_phone || '-' }} • {{ cust.email }}
+                      </div>
+                      <div class="small text-secondary text-truncate">{{ cust.address_line1 }}, {{ cust.city }}</div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+            <div class="form-text small text-muted">
+              Selecting a customer populates the separate editable fields below and filters catalog items dedicated to this customer.
+            </div>
+          </div>
+
+          <!-- SEPARATE EDITABLE CUSTOMER INPUT BOXES -->
+          <h6 class="fw-bold text-dark mb-3 border-bottom pb-2">
+            Customer & Billed-To Snapshot (Invoice-Specific Editable Fields)
+          </h6>
+
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label">Customer Name <span class="required-star">*</span></label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Client or Representative Name"
+                formControlName="customer_name"
+                [class.is-invalid]="submitted && f['customer_name'].errors"
+              />
+              @if (submitted && f['customer_name'].errors) {
+                <div class="invalid-feedback">Customer name is required</div>
+              }
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label">Company Name</label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Company or Corporate Entity"
+                formControlName="company_name"
+              />
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">Phone Number</label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="e.g. +91 98450 12345"
+                formControlName="customer_phone"
+              />
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">Email Address</label>
+              <input
+                type="email"
+                class="form-control"
+                placeholder="e.g. billing@client.com"
+                formControlName="customer_email"
+              />
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">Payment Method / Term</label>
+              <select class="form-select" formControlName="payment_method">
+                <option value="Daily Pay">Daily Pay</option>
+                <option value="Monthly Pay">Monthly Pay</option>
+                <option value="15 Days Pay">15 Days Pay</option>
+              </select>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Billed Address</label>
+              <textarea
+                rows="2"
+                class="form-control"
+                placeholder="Full street address, city, state, postal code"
+                formControlName="customer_address"
+              ></textarea>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- DYNAMIC INVOICE ITEMS TABLE -->
+      <div class="card border-0 shadow-sm mb-4 card-line-items">
+        <div class="card-header bg-white border-0 pt-4 px-4 pb-2 d-flex justify-content-between align-items-center">
+          <div>
+            <h6 class="fw-bold text-dark mb-0">Line Items & Services</h6>
+            <div class="d-flex align-items-center gap-2 mt-1">
+              @if (invoiceForm.get('customer_id')?.value) {
+                <span class="badge bg-success-subtle text-success border border-success-subtle small">
+                  ✓ Filtered for Customer: {{ invoiceForm.get('customer_name')?.value }}
+                </span>
+              } @else {
+                <span class="badge bg-warning-subtle text-dark border border-warning-subtle small">
+                  💡 Select customer above to show their dedicated items
+                </span>
+              }
+            </div>
+          </div>
+          <button type="button" class="btn btn-sm btn-orange" (click)="addItem()">
+            <span>➕</span> Add Item
+          </button>
+        </div>
+        <div class="card-body p-0">
+          <div class="items-table-wrapper">
+            <table class="table table-bordered mb-0 align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 45px;" class="text-center">S.No</th>
+                  <th style="width: 32%;">Item (Autocomplete / Master)</th>
+                  <th style="width: 25%;">Proceed / Description</th>
+                  <th style="width: 14%;">Price (₹)</th>
+                  <th style="width: 9%;">Qty</th>
+                  <th style="width: 15%;" class="text-end">Total (₹)</th>
+                  <th style="width: 45px;" class="text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody formArrayName="items">
+                @for (itemGroup of itemsArray.controls; track $index; let idx = $index) {
+                  <tr [formGroupName]="idx">
+                    <td class="text-center fw-semibold text-muted">{{ idx + 1 }}</td>
+                    
+                    <!-- Item Name & Autocomplete Trigger -->
+                    <td class="item-cell-relative">
+                      <input
+                        type="text"
+                        class="form-control form-control-sm autocomplete-trigger"
+                        placeholder="Type or select catalog item..."
+                        formControlName="item_name"
+                        (input)="onItemSearchInput(idx)"
+                        (focus)="onItemFocus(idx)"
+                        autocomplete="off"
+                      />
+                      @if (activeItemSearchRow === idx) {
+                        <div class="autocomplete-dropdown shadow-lg rounded-3 border">
+                          @if (!invoiceForm.get('customer_id')?.value) {
+                            <div class="p-2 text-muted small bg-light border-bottom">
+                              💡 <em>Tip: Select a customer above to load their dedicated customer items.</em>
+                            </div>
+                          }
+                          @for (it of itemSearchResults; track it.id) {
+                            <div class="autocomplete-item" (click)="selectItemForRow(idx, it)">
+                              <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-dark item-title">{{ it.item_name }}</span>
+                                @if (it.customer_id) {
+                                  <span class="badge bg-warning-subtle text-dark border border-warning" style="font-size: 11px;">👤 Customer Item</span>
+                                } @else {
+                                  <span class="badge bg-light text-secondary border" style="font-size: 11px;">General</span>
+                                }
+                              </div>
+                              <div class="d-flex justify-content-between text-muted small">
+                                <span>Cost: <strong class="text-dark">₹{{ it.item_cost }}</strong></span>
+                                <span>GST: <strong class="text-dark">{{ it.gst_percentage }}%</strong></span>
+                                @if (it.certificate_of_origin) {
+                                  <span class="text-secondary small">COO: {{ it.certificate_of_origin }}</span>
+                                }
+                              </div>
+                              @if (it.import_declaration || it.export_declaration) {
+                                <div class="text-secondary small text-truncate mt-1" style="font-size: 11px;">
+                                  {{ it.import_declaration || it.export_declaration }}
+                                </div>
+                              }
+                            </div>
+                          }
+                          @if (itemSearchResults.length === 0) {
+                            <div class="p-3 text-center text-muted small">
+                              No catalog item found. You can enter a custom item name directly.
+                            </div>
+                          }
+                        </div>
+                      }
+                    </td>
+
+                    <!-- Proceed / Description -->
+                    <td>
+                      <input
+                        type="text"
+                        class="form-control form-control-sm"
+                        placeholder="Proceed notes or item description"
+                        formControlName="description"
+                      />
+                    </td>
+
+                    <!-- Price -->
+                    <td>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        class="form-control form-control-sm text-end"
+                        formControlName="price"
+                        (input)="recalculateTotals()"
+                      />
+                    </td>
+
+                    <!-- Quantity -->
+                    <td>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        class="form-control form-control-sm text-center"
+                        formControlName="quantity"
+                        (input)="recalculateTotals()"
+                      />
+                    </td>
+
+                    <!-- Line Total (Auto-calculated) -->
+                    <td class="text-end fw-bold text-dark">
+                      {{ formatCurrency(itemGroup.get('line_total')?.value) }}
+                      @if (itemGroup.get('gst_amount')?.value > 0) {
+                        <div class="small text-muted" style="font-size: 11px; font-weight: normal;">
+                          + GST ({{ itemGroup.get('gst_percentage')?.value }}%): {{ formatCurrency(itemGroup.get('gst_amount')?.value) }}
+                        </div>
+                      }
+                    </td>
+
+                    <!-- Remove Row -->
+                    <td class="text-center">
+                      @if (itemsArray.length > 1) {
+                        <button type="button" class="btn btn-sm btn-outline-danger p-1" (click)="removeItem(idx)" title="Remove line item">
+                          🗑️
+                        </button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUMMARY CALCULATIONS & FOOTER SECTION -->
+      <div class="row g-4 mb-4">
+        <!-- Footer: Notes, Terms -->
+        <div class="col-12 col-lg-7">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 pt-4 px-4 pb-2">
+              <h6 class="fw-bold text-dark mb-0">Invoice Footer & Commercial Terms</h6>
+            </div>
+            <div class="card-body px-4 py-2">
+              <div class="mb-3">
+                <label class="form-label small">Payment Terms</label>
+                <input
+                  type="text"
+                  class="form-control form-control-sm"
+                  placeholder="e.g. Net 15 days from issuance"
+                  formControlName="payment_terms"
+                />
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label small">Notes / Client Remarks</label>
+                <textarea
+                  rows="2"
+                  class="form-control form-control-sm"
+                  placeholder="Special instructions or thank you note..."
+                  formControlName="notes"
+                ></textarea>
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label small">Terms & Conditions</label>
+                <textarea
+                  rows="3"
+                  class="form-control form-control-sm"
+                  placeholder="Standard legal trade warranty or terms..."
+                  formControlName="terms_and_conditions"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Financial Calculations Breakdown -->
+        <div class="col-12 col-lg-5">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 pt-4 px-4 pb-2">
+              <h6 class="fw-bold text-dark mb-0">Financial Summary (INR)</h6>
+            </div>
+            <div class="card-body px-4 py-2">
+              <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <span class="text-secondary">Subtotal (Line totals sum):</span>
+                <span class="fw-semibold text-dark fs-6">{{ formatCurrency(calculatedSubtotal) }}</span>
+              </div>
+
+              <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <span class="text-secondary">Total GST:</span>
+                <span class="fw-semibold text-dark fs-6">{{ formatCurrency(calculatedTotalGst) }}</span>
+              </div>
+
+              <!-- Discount -->
+              <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <label class="form-label mb-0 small text-secondary">Discount (₹):</label>
+                <div style="width: 130px;">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    class="form-control form-control-sm text-end"
+                    formControlName="discount"
+                    (input)="recalculateTotals()"
+                  />
+                </div>
+              </div>
+
+              <!-- Additional Charges -->
+              <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <label class="form-label mb-0 small text-secondary">Additional Charges (₹):</label>
+                <div style="width: 130px;">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    class="form-control form-control-sm text-end"
+                    formControlName="additional_charges"
+                    (input)="recalculateTotals()"
+                  />
+                </div>
+              </div>
+
+              <!-- Grand Total -->
+              <div class="d-flex justify-content-between align-items-center p-3 rounded-3 my-3" style="background: #FFF8E1; border: 2px solid #FFAB00;">
+                <span class="fw-bold text-uppercase text-dark fs-6">Grand Total:</span>
+                <span class="fw-bold fs-4" style="color: #FF6200;">{{ formatCurrency(calculatedGrandTotal) }}</span>
+              </div>
+
+              <!-- Amount Paid -->
+              <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <label class="form-label mb-0 small text-secondary">Amount Paid (₹):</label>
+                <div style="width: 130px;">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    class="form-control form-control-sm text-end"
+                    formControlName="amount_paid"
+                    (input)="recalculateTotals()"
+                  />
+                </div>
+              </div>
+
+              <!-- Balance Due -->
+              <div class="d-flex justify-content-between align-items-center py-2">
+                <span class="text-danger fw-bold">Balance Due:</span>
+                <span class="fw-bold text-danger fs-5">{{ formatCurrency(calculatedBalanceDue) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Action Buttons Bar -->
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-3 d-flex flex-wrap justify-content-between align-items-center gap-3">
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-light text-dark border">Currency: {{ companySetting?.default_currency || 'INR' }} (₹)</span>
+            <span class="text-muted small">Status will be saved as <strong>{{ invoiceForm.get('status')?.value }}</strong></span>
+          </div>
+          <div class="d-flex gap-2">
+            <a routerLink="/invoices" class="btn btn-light border px-4">
+              Cancel
+            </a>
+            <button type="button" class="btn btn-orange-outline px-4" (click)="openPreviewModal()">
+              👁️ Live Preview
+            </button>
+            <button type="button" class="btn btn-light border px-4" (click)="saveAs('Draft')" [disabled]="saving">
+              💾 Save Draft
+            </button>
+            <button type="button" class="btn btn-orange px-4" (click)="saveAs('Generated')" [disabled]="saving">
+              @if (saving) {
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                Processing...
+              } @else {
+                ⚡ {{ isEditMode ? 'Update Invoice' : 'Generate Tax Invoice' }}
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </form>
+  }
+
+  <!-- LIVE PREVIEW MODAL -->
+  @if (isPreviewModalOpen) {
+    <div class="modal-backdrop fade show"></div>
+    <div class="modal fade show d-block" tabindex="-1">
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 14px;">
+          <div class="modal-header border-bottom-0 pb-0">
+            <h5 class="modal-title fw-bold text-dark">Invoice Preview (Printable View)</h5>
+            <button type="button" class="btn-close" (click)="isPreviewModalOpen = false"></button>
+          </div>
+          <div class="modal-body p-4">
+            <div class="preview-box p-4 bg-white border rounded-3" style="border-top: 4px solid #FFAB00 !important;">
+              <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-3">
+                <div>
+                  <h5 class="fw-bold text-uppercase mb-0" style="color: #FF6200; font-size: 1.15rem; letter-spacing: -0.2px;">
+                    ⚡ {{ companySetting?.company_name || 'Orange Invoicing' }}
+                  </h5>
+                  <div class="small text-muted mt-1">{{ companySetting?.company_address }}</div>
+                  <div class="small text-muted">GSTIN: {{ companySetting?.gstin }}</div>
+                </div>
+                <div class="text-end">
+                  <h5 class="fw-bold tracking-wide mb-0 text-dark" style="font-size: 1.25rem;">TAX INVOICE</h5>
+                  <div class="fw-bold text-orange">{{ invoiceForm.get('invoice_number')?.value }}</div>
+                  <div class="small text-muted mt-1">Date: {{ invoiceForm.get('invoice_date')?.value }}</div>
+                </div>
+              </div>
+
+              <div class="row mb-4">
+                <div class="col-6">
+                  <div class="small text-muted text-uppercase fw-bold mb-1">Billed To:</div>
+                  <div class="fw-bold text-dark">{{ invoiceForm.get('customer_name')?.value }}</div>
+                  <div class="small text-secondary">{{ invoiceForm.get('company_name')?.value }}</div>
+                  <div class="small text-muted">{{ invoiceForm.get('customer_address')?.value }}</div>
+                  <div class="small text-muted">{{ invoiceForm.get('customer_phone')?.value }}</div>
+                </div>
+                <div class="col-6 text-end">
+                  <div class="small text-muted text-uppercase fw-bold mb-1">Payment Term:</div>
+                  <div class="fw-bold text-dark">{{ invoiceForm.get('payment_method')?.value }}</div>
+                  <div class="small text-muted">Due: {{ invoiceForm.get('due_date')?.value }}</div>
+                </div>
+              </div>
+
+              <!-- Table Preview -->
+              <table class="table table-sm table-bordered mb-3">
+                <thead class="table-light">
+                  <tr>
+                    <th>S.No</th>
+                    <th>Item</th>
+                    <th>Description</th>
+                    <th class="text-end">Price</th>
+                    <th class="text-center">Qty</th>
+                    <th class="text-end">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of itemsArray.controls; track $index; let idx = $index) {
+                    <tr>
+                      <td>{{ idx + 1 }}</td>
+                      <td class="fw-semibold">{{ item.get('item_name')?.value }}</td>
+                      <td class="small">{{ item.get('description')?.value || '-' }}</td>
+                      <td class="text-end">{{ formatCurrency(item.get('price')?.value) }}</td>
+                      <td class="text-center">{{ item.get('quantity')?.value }}</td>
+                      <td class="text-end fw-bold">{{ formatCurrency(item.get('line_total')?.value) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+
+              <!-- Totals Preview -->
+              <div class="row justify-content-end">
+                <div class="col-6">
+                  <div class="d-flex justify-content-between py-1 small">
+                    <span>Subtotal:</span>
+                    <span class="fw-semibold">{{ formatCurrency(calculatedSubtotal) }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between py-1 small">
+                    <span>GST:</span>
+                    <span class="fw-semibold">{{ formatCurrency(calculatedTotalGst) }}</span>
+                  </div>
+                  @if (invoiceForm.get('discount')?.value > 0) {
+                    <div class="d-flex justify-content-between py-1 small text-success">
+                      <span>Discount:</span>
+                      <span class="fw-semibold">- {{ formatCurrency(invoiceForm.get('discount')?.value) }}</span>
+                    </div>
+                  }
+                  <div class="d-flex justify-content-between py-2 border-top border-bottom fw-bold text-dark fs-5">
+                    <span>Grand Total:</span>
+                    <span style="color: #FF6200;">{{ formatCurrency(calculatedGrandTotal) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer border-top-0 pt-0">
+            <button type="button" class="btn btn-light" (click)="isPreviewModalOpen = false">Close</button>
+            <button type="button" class="btn btn-orange" (click)="printPreview()">🖨️ Print Invoice</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

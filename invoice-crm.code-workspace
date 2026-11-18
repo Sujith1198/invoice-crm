@@ -1,0 +1,19 @@
+{
+  "folders": [
+    {
+      "name": "Frontend (Nx Angular)",
+      "path": "InvoiceManagementFrontend"
+    },
+    {
+      "name": "Backend (Laravel API)",
+      "path": "InvoiceManagementBackend"
+    },
+    {
+      "name": "Workspace Root",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "nxConsole.nxWorkspacePath": "InvoiceManagementFrontend"
+  }
+}

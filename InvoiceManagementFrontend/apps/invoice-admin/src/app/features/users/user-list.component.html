@@ -1,0 +1,184 @@
+<div class="user-page">
+  <!-- Header -->
+  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+    <div>
+      <h4 class="fw-bold text-dark mb-1">User & Role Management</h4>
+      <p class="text-muted small mb-0">Manage user accounts, assign roles (Admin, Manager, Team Lead, User), and configure screen access permissions</p>
+    </div>
+    <a routerLink="/users/create" class="btn btn-orange">
+      <span>➕</span> Create New User
+    </a>
+  </div>
+
+  <!-- Filters & Search Toolbar -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-3">
+      <div class="row g-2 align-items-center">
+        <!-- Search -->
+        <div class="col-12 col-md-5">
+          <div class="position-relative">
+            <input
+              type="text"
+              class="form-control form-control-sm ps-4"
+              placeholder="Search user name or email address..."
+              [(ngModel)]="searchQuery"
+              (keyup.enter)="onSearch()"
+            />
+            <span class="position-absolute top-50 start-0 translate-middle-y ps-2 text-muted small">🔍</span>
+          </div>
+        </div>
+
+        <!-- Role Filter -->
+        <div class="col-6 col-md-3">
+          <select class="form-select form-select-sm" [(ngModel)]="selectedRole" (change)="onFilterChange()">
+            <option value="">All Roles</option>
+            <option value="admin">Admin</option>
+            <option value="manager">Manager</option>
+            <option value="team lead">Team Lead</option>
+            <option value="user">User</option>
+          </select>
+        </div>
+
+        <!-- Status Filter -->
+        <div class="col-6 col-md-2">
+          <select class="form-select form-select-sm" [(ngModel)]="selectedStatus" (change)="onFilterChange()">
+            <option value="">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+
+        <!-- Actions -->
+        <div class="col-12 col-md-2 d-flex gap-2">
+          <button class="btn btn-sm btn-orange w-100 justify-content-center" (click)="onSearch()">
+            Filter
+          </button>
+          <button class="btn btn-sm btn-light border" (click)="resetFilters()" title="Reset Filters">
+            ↺
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Users Table -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      @if (loading) {
+        <ui-loading text="Loading user directory..."></ui-loading>
+      } @else if (pagination && pagination.data && pagination.data.length > 0) {
+        <div class="table-responsive">
+          <table class="table table-hover mb-0 align-middle">
+            <thead>
+              <tr>
+                <th style="width: 50px;">S.No</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Allowed Screen Access</th>
+                <th>Status</th>
+                <th>Created Date</th>
+                <th class="text-end" style="width: 130px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (u of pagination.data; track u.id; let idx = $index) {
+                <tr>
+                  <td class="text-muted small">
+                    {{ ((pagination.current_page - 1) * pagination.per_page) + idx + 1 }}
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="user-avatar-circle">
+                        {{ u.name.charAt(0).toUpperCase() }}
+                      </div>
+                      <div class="fw-bold text-dark">{{ u.name }}</div>
+                    </div>
+                  </td>
+                  <td>
+                    <a [href]="'mailto:' + u.email" class="text-decoration-none text-muted small">
+                      {{ u.email }}
+                    </a>
+                  </td>
+                  <td>
+                    <span [class]="'badge text-capitalize ' + getRoleBadge(u.role || 'user')">
+                      {{ u.role || 'user' }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="d-flex flex-wrap gap-1">
+                      @if (u.role === 'admin') {
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle small">
+                          ⭐ Full Screen Access (All)
+                        </span>
+                      } @else if (u.permissions && u.permissions.length > 0) {
+                        @for (screen of u.permissions; track screen) {
+                          <span class="badge bg-light text-dark border small" [title]="'Allowed screen: ' + screen">
+                            {{ getScreenLabel(screen) }}
+                          </span>
+                        }
+                      } @else {
+                        <span class="badge bg-secondary-subtle text-secondary small">
+                          No screen permissions assigned
+                        </span>
+                      }
+                    </div>
+                  </td>
+                  <td>
+                    <span [class]="'badge ' + getBadgeClass(u.status || 'active')">
+                      {{ u.status || 'active' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="small text-muted">{{ formatDate(u.created_at) }}</span>
+                  </td>
+                  <td class="text-end text-nowrap">
+                    <a [routerLink]="['/users/edit', u.id]" class="btn btn-sm btn-light border p-1 me-1" title="Edit User & Permissions">
+                      ✏️
+                    </a>
+                    @if (u.id !== 1) {
+                      <button class="btn btn-sm btn-outline-danger p-1" (click)="openDeleteConfirm(u)" title="Delete User">
+                        🗑️
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="px-4">
+          <ui-pagination
+            [currentPage]="pagination.current_page"
+            [totalPages]="pagination.last_page"
+            [total]="pagination.total"
+            [from]="pagination.from"
+            [to]="pagination.to"
+            (pageChange)="onPageChange($event)"
+          ></ui-pagination>
+        </div>
+      } @else {
+        <ui-empty-state
+          title="No Users Found"
+          description="No user records match your active query or filters."
+          actionText="Create New User"
+          (onAction)="resetFilters()"
+        ></ui-empty-state>
+      }
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Dialog -->
+  <ui-confirm-dialog
+    [isOpen]="isDeleteModalOpen"
+    title="Delete User Account"
+    [message]="'Are you sure you want to delete user ' + (userToDelete?.name || '') + ' (' + (userToDelete?.email || '') + ')? This will revoke their access immediately.'"
+    confirmText="Delete User"
+    cancelText="Cancel"
+    [isDanger]="true"
+    (onConfirm)="confirmDelete()"
+    (onCancel)="isDeleteModalOpen = false"
+  ></ui-confirm-dialog>
+</div>

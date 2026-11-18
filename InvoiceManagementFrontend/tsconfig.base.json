@@ -1,0 +1,64 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "ignoreDeprecations": "6.0",
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "bundler",
+    "emitDecoratorMetadata": false,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "ES2022",
+    "module": "ES2022",
+    "lib": [
+      "ES2022",
+      "dom"
+    ],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@invoice-mgmt/shared-models": [
+        "libs/shared-models/src/index.ts"
+      ],
+      "@invoice-mgmt/shared-ui": [
+        "libs/shared-ui/src/index.ts"
+      ],
+      "@invoice-mgmt/shared-services": [
+        "libs/shared-services/src/index.ts"
+      ],
+      "@invoice-mgmt/shared-utils": [
+        "libs/shared-utils/src/index.ts"
+      ],
+      "@invoice-mgmt/customers": [
+        "libs/customers/src/index.ts"
+      ],
+      "@invoice-mgmt/items": [
+        "libs/items/src/index.ts"
+      ],
+      "@invoice-mgmt/invoices": [
+        "libs/invoices/src/index.ts"
+      ],
+      "@invoice-mgmt/invoice-generate": [
+        "libs/invoice-generate/src/index.ts"
+      ],
+      "@invoice-mgmt/invoice-list": [
+        "libs/invoice-list/src/index.ts"
+      ],
+      "@invoice-mgmt/reports": [
+        "libs/reports/src/index.ts"
+      ],
+      "@invoice-mgmt/settings": [
+        "libs/settings/src/index.ts"
+      ],
+      "@invoice-mgmt/users": [
+        "libs/users/src/index.ts"
+      ]
+    }
+  },
+  "exclude": [
+    "node_modules",
+    "tmp"
+  ]
+}

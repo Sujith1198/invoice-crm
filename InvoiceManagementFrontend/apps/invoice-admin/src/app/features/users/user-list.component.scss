@@ -1,0 +1,28 @@
+.user-page {
+  .user-avatar-circle {
+    width: 32px;
+    height: 32px;
+    background: #FFF3E0;
+    color: #FF6200;
+    font-weight: 700;
+    font-size: 13px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .table {
+    th {
+      font-weight: 600;
+      color: #495057;
+      background-color: #f8f9fa;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    td {
+      font-size: 13px;
+    }
+  }
+}

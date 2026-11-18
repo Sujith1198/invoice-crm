@@ -1,0 +1,161 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "newProjectRoot": "apps",
+  "projects": {
+    "invoice-admin": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "scss"
+        }
+      },
+      "root": "apps/invoice-admin",
+      "sourceRoot": "apps/invoice-admin/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:application",
+          "options": {
+            "outputPath": "dist/apps/invoice-admin",
+            "index": "apps/invoice-admin/src/index.html",
+            "browser": "apps/invoice-admin/src/main.ts",
+            "polyfills": [
+              "zone.js"
+            ],
+            "tsConfig": "apps/invoice-admin/tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "apps/invoice-admin/public"
+              }
+            ],
+            "styles": [
+              "apps/invoice-admin/src/styles.scss"
+            ],
+            "scripts": []
+          },
+          "configurations": {
+            "production": {
+              "optimization": {
+                "scripts": true,
+                "styles": true,
+                "fonts": false
+              },
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "1mb",
+                  "maximumError": "2mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "15kb",
+                  "maximumError": "30kb"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "invoice-admin:build:production"
+            },
+            "development": {
+              "buildTarget": "invoice-admin:build:development"
+            }
+          },
+          "defaultConfiguration": "development",
+          "options": {
+            "port": 4200
+          }
+        }
+      }
+    },
+    "customers": {
+      "projectType": "library",
+      "root": "libs/customers",
+      "sourceRoot": "libs/customers/src",
+      "prefix": "app"
+    },
+    "items": {
+      "projectType": "library",
+      "root": "libs/items",
+      "sourceRoot": "libs/items/src",
+      "prefix": "app"
+    },
+    "invoices": {
+      "projectType": "library",
+      "root": "libs/invoices",
+      "sourceRoot": "libs/invoices/src",
+      "prefix": "app"
+    },
+    "invoice-generate": {
+      "projectType": "library",
+      "root": "libs/invoice-generate",
+      "sourceRoot": "libs/invoice-generate/src",
+      "prefix": "app"
+    },
+    "invoice-list": {
+      "projectType": "library",
+      "root": "libs/invoice-list",
+      "sourceRoot": "libs/invoice-list/src",
+      "prefix": "app"
+    },
+    "reports": {
+      "projectType": "library",
+      "root": "libs/reports",
+      "sourceRoot": "libs/reports/src",
+      "prefix": "app"
+    },
+    "settings": {
+      "projectType": "library",
+      "root": "libs/settings",
+      "sourceRoot": "libs/settings/src",
+      "prefix": "app"
+    },
+    "users": {
+      "projectType": "library",
+      "root": "libs/users",
+      "sourceRoot": "libs/users/src",
+      "prefix": "app"
+    },
+    "shared-models": {
+      "projectType": "library",
+      "root": "libs/shared-models",
+      "sourceRoot": "libs/shared-models/src",
+      "prefix": "app"
+    },
+    "shared-services": {
+      "projectType": "library",
+      "root": "libs/shared-services",
+      "sourceRoot": "libs/shared-services/src",
+      "prefix": "app"
+    },
+    "shared-ui": {
+      "projectType": "library",
+      "root": "libs/shared-ui",
+      "sourceRoot": "libs/shared-ui/src",
+      "prefix": "ui"
+    },
+    "shared-utils": {
+      "projectType": "library",
+      "root": "libs/shared-utils",
+      "sourceRoot": "libs/shared-utils/src",
+      "prefix": "app"
+    }
+  },
+  "cli": {
+    "analytics": false
+  }
+}

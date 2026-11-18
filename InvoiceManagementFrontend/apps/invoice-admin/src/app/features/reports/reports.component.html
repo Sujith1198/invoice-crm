@@ -1,0 +1,229 @@
+<div class="reports-page pb-5">
+  <!-- Page Header -->
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+      <h4 class="fw-bold text-dark mb-1">Financial, GST & Operational Reports</h4>
+      <p class="text-muted small mb-0">Generate, analyze, and export comprehensive sales and taxation statements</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-sm btn-light border" (click)="printReport()">
+        🖨️ Print Report
+      </button>
+      <button class="btn btn-sm btn-orange" (click)="exportCsv()">
+        📊 Export CSV / Excel
+      </button>
+    </div>
+  </div>
+
+  <!-- Report Tabs Bar (11 Reports) -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-2">
+      <ul class="nav nav-pills report-pills overflow-x-auto flex-nowrap p-1 gap-1">
+        @for (tab of reportTabs; track tab.id) {
+          <li class="nav-item">
+            <button
+              class="nav-link text-nowrap py-2 px-3 small fw-semibold"
+              [class.active]="activeReport === tab.id"
+              (click)="selectReport(tab.id)"
+            >
+              <span class="me-1">{{ tab.icon }}</span> {{ tab.name }}
+            </button>
+          </li>
+        }
+      </ul>
+    </div>
+  </div>
+
+  <!-- Filters Ribbon -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-3">
+      <div class="row g-2 align-items-center">
+        <!-- From Date -->
+        <div class="col-6 col-md-2">
+          <label class="form-label small text-muted mb-1">From Date</label>
+          <input
+            type="date"
+            class="form-control form-control-sm"
+            [(ngModel)]="fromDate"
+            (change)="loadReport(1)"
+          />
+        </div>
+
+        <!-- To Date -->
+        <div class="col-6 col-md-2">
+          <label class="form-label small text-muted mb-1">To Date</label>
+          <input
+            type="date"
+            class="form-control form-control-sm"
+            [(ngModel)]="toDate"
+            (change)="loadReport(1)"
+          />
+        </div>
+
+        <!-- Customer Filter -->
+        <div class="col-6 col-md-2">
+          <label class="form-label small text-muted mb-1">Customer</label>
+          <select class="form-select form-select-sm" [(ngModel)]="selectedCustomerId" (change)="loadReport(1)">
+            <option value="">All Customers</option>
+            @for (c of customers; track c.id) {
+              <option [value]="c.id">{{ c.full_name }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Item Filter -->
+        <div class="col-6 col-md-2">
+          <label class="form-label small text-muted mb-1">Item</label>
+          <select class="form-select form-select-sm" [(ngModel)]="selectedItemId" (change)="loadReport(1)">
+            <option value="">All Catalog Items</option>
+            @for (it of items; track it.id) {
+              <option [value]="it.id">{{ it.item_name }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Status Filter -->
+        <div class="col-6 col-md-2">
+          <label class="form-label small text-muted mb-1">Status</label>
+          <select class="form-select form-select-sm" [(ngModel)]="selectedStatus" (change)="loadReport(1)">
+            <option value="">All Statuses</option>
+            <option value="Generated">Generated</option>
+            <option value="Partially Paid">Partially Paid</option>
+            <option value="Paid">Paid</option>
+            <option value="Overdue">Overdue</option>
+            <option value="Draft">Draft</option>
+          </select>
+        </div>
+
+        <!-- Search & Reset -->
+        <div class="col-12 col-md-2 d-flex align-items-end gap-2">
+          <button class="btn btn-sm btn-orange w-100" (click)="loadReport(1)">
+            Filter
+          </button>
+          <button class="btn btn-sm btn-light border" (click)="resetFilters()" title="Reset Filters">
+            ↺
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Financial Metric Summaries for this Report -->
+  @if (summary) {
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-4 col-xl-2">
+        <div class="card border-0 shadow-sm p-3">
+          <span class="text-muted small">Invoices</span>
+          <h5 class="fw-bold text-dark mb-0 mt-1">{{ summary.total_invoices || 0 }}</h5>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-xl-2">
+        <div class="card border-0 shadow-sm p-3">
+          <span class="text-muted small">Subtotal</span>
+          <h5 class="fw-bold text-dark mb-0 mt-1">{{ formatCurrency(summary.total_subtotal) }}</h5>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-xl-2">
+        <div class="card border-0 shadow-sm p-3">
+          <span class="text-muted small">Total GST</span>
+          <h5 class="fw-bold text-dark mb-0 mt-1" style="color: #FF6200;">{{ formatCurrency(summary.total_gst) }}</h5>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-xl-2">
+        <div class="card border-0 shadow-sm p-3">
+          <span class="text-muted small">Grand Total</span>
+          <h5 class="fw-bold text-dark mb-0 mt-1">{{ formatCurrency(summary.total_grand) }}</h5>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-xl-2">
+        <div class="card border-0 shadow-sm p-3">
+          <span class="text-muted small">Amount Collected</span>
+          <h5 class="fw-bold text-success mb-0 mt-1">{{ formatCurrency(summary.total_paid) }}</h5>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-xl-2">
+        <div class="card border-0 shadow-sm p-3">
+          <span class="text-muted small">Outstanding</span>
+          <h5 class="fw-bold text-danger mb-0 mt-1">{{ formatCurrency(summary.total_balance) }}</h5>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Main Report Records Table -->
+  <div class="card border-0 shadow-sm" id="printable-report">
+    <div class="card-header bg-white border-0 pt-4 px-4 pb-2 d-flex justify-content-between align-items-center">
+      <h6 class="fw-bold text-dark mb-0">{{ activeReportTitle }}</h6>
+      <span class="badge bg-light text-dark border">{{ pagination?.total || 0 }} Records</span>
+    </div>
+    <div class="card-body p-0">
+      @if (loading) {
+        <ui-loading text="Aggregating records and compiling figures..."></ui-loading>
+      } @else if (pagination && pagination.data && pagination.data.length > 0) {
+        <div class="table-responsive">
+          <table class="table table-hover mb-0 align-middle">
+            <thead>
+              <tr>
+                <th style="width: 45px;">S.No</th>
+                <th>Invoice #</th>
+                <th>Date</th>
+                <th>Customer Name</th>
+                <th>Company Name</th>
+                <th class="text-end">Subtotal</th>
+                <th class="text-end">GST</th>
+                <th class="text-end">Grand Total</th>
+                <th class="text-end">Paid</th>
+                <th class="text-end">Balance</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of pagination.data; track row.id; let idx = $index) {
+                <tr>
+                  <td class="text-muted small">
+                    {{ ((pagination.current_page - 1) * pagination.per_page) + idx + 1 }}
+                  </td>
+                  <td class="fw-bold" style="color: #FF6200;">
+                    {{ row.invoice_number }}
+                  </td>
+                  <td>{{ formatDate(row.invoice_date) }}</td>
+                  <td class="fw-semibold text-dark">{{ row.customer_name }}</td>
+                  <td><span class="small text-secondary">{{ row.company_name || '-' }}</span></td>
+                  <td class="text-end">{{ formatCurrency(row.subtotal) }}</td>
+                  <td class="text-end">{{ formatCurrency(row.total_gst) }}</td>
+                  <td class="text-end fw-bold text-dark">{{ formatCurrency(row.grand_total) }}</td>
+                  <td class="text-end text-success">{{ formatCurrency(row.amount_paid) }}</td>
+                  <td class="text-end fw-bold" [class.text-danger]="row.balance_due > 0">
+                    {{ formatCurrency(row.balance_due) }}
+                  </td>
+                  <td>
+                    <span [class]="'badge ' + getBadgeClass(row.status)">
+                      {{ row.status }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="px-4">
+          <ui-pagination
+            [currentPage]="pagination.current_page"
+            [totalPages]="pagination.last_page"
+            [total]="pagination.total"
+            [from]="pagination.from"
+            [to]="pagination.to"
+            (pageChange)="loadReport($event)"
+          ></ui-pagination>
+        </div>
+      } @else {
+        <ui-empty-state
+          title="No Report Data"
+          description="No database records found matching the chosen parameters and date interval."
+          (onAction)="resetFilters()"
+        ></ui-empty-state>
+      }
+    </div>
+  </div>
+</div>

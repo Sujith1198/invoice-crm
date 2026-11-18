@@ -1,0 +1,175 @@
+<div class="settings-page pb-5">
+  <!-- Page Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h4 class="fw-bold text-dark mb-1">Company & Invoice Settings</h4>
+      <p class="text-muted small mb-0">Configure company corporate profile, legal GSTIN, currency, and invoice templates</p>
+    </div>
+  </div>
+
+  @if (loading) {
+    <ui-loading text="Loading company configuration..."></ui-loading>
+  } @else {
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4 p-md-5">
+        <form [formGroup]="settingsForm" (ngSubmit)="onSubmit()">
+
+          <!-- Section 1: Business Identity -->
+          <h6 class="fw-bold text-dark mb-3 border-bottom pb-2">
+            1. Business Identity & Legal Information
+          </h6>
+
+          <div class="row g-3 mb-4">
+            <div class="col-12 col-md-6">
+              <label class="form-label">Company Name <span class="required-star">*</span></label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="e.g. Orange Invoicing & Logistics Ltd"
+                formControlName="company_name"
+                [class.is-invalid]="submitted && f['company_name'].errors"
+              />
+              @if (submitted && f['company_name'].errors) {
+                <div class="invalid-feedback">Company name is required</div>
+              }
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label">GSTIN / Tax ID <span class="required-star">*</span></label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="e.g. 29AAFCO8421K1ZN"
+                formControlName="gstin"
+                [class.is-invalid]="submitted && f['gstin'].errors"
+              />
+              @if (submitted && f['gstin'].errors) {
+                <div class="invalid-feedback">Valid GSTIN is required</div>
+              }
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label">Support Email Address</label>
+              <input
+                type="email"
+                class="form-control"
+                placeholder="e.g. billing@orangeinvoice.com"
+                formControlName="email"
+              />
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label">Contact Phone Number</label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="e.g. +91 80 4123 4567"
+                formControlName="phone_number"
+              />
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Registered Corporate Address</label>
+              <textarea
+                rows="2"
+                class="form-control"
+                placeholder="Full business address for invoice headers..."
+                formControlName="company_address"
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- Section 2: Invoicing Parameters -->
+          <h6 class="fw-bold text-dark mb-3 border-bottom pb-2">
+            2. Invoicing Numbering & Default Currency
+          </h6>
+
+          <div class="row g-3 mb-4">
+            <div class="col-12 col-md-4">
+              <label class="form-label">Invoice Number Prefix</label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Leave blank for date format e.g. 202611170001"
+                formControlName="invoice_prefix"
+              />
+              <div class="form-text small">Default format generates YYYYMMDD0001 without prefix</div>
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">Default Currency Code <span class="required-star">*</span></label>
+              <select class="form-select" formControlName="default_currency" (change)="onCurrencyChange()">
+                <option value="INR">INR - Indian Rupee (₹)</option>
+                <option value="USD">USD - US Dollar ($)</option>
+                <option value="EUR">EUR - Euro (€)</option>
+                <option value="GBP">GBP - British Pound (£)</option>
+                <option value="AED">AED - UAE Dirham (AED)</option>
+                <option value="SGD">SGD - Singapore Dollar (S$)</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">Currency Symbol</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="default_currency_symbol"
+                readonly
+              />
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Default Payment Terms</label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="e.g. Net 15 days from invoice issuance date"
+                formControlName="default_payment_terms"
+              />
+            </div>
+          </div>
+
+          <!-- Section 3: Invoice Template & Terms -->
+          <h6 class="fw-bold text-dark mb-3 border-bottom pb-2">
+            3. Invoice Template Text & Legal Terms
+          </h6>
+
+          <div class="row g-3 mb-4">
+            <div class="col-12">
+              <label class="form-label">Invoice Footer Note</label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="e.g. Thank you for your partnership with Orange Invoicing Solutions."
+                formControlName="invoice_footer"
+              />
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Default Terms and Conditions</label>
+              <textarea
+                rows="4"
+                class="form-control"
+                placeholder="Numbered legal and warranty terms..."
+                formControlName="terms_and_conditions"
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- Save Actions -->
+          <div class="d-flex justify-content-end gap-3 pt-3 border-top">
+            <button type="submit" class="btn btn-orange px-4" [disabled]="saving">
+              @if (saving) {
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                Saving Settings...
+              } @else {
+                💾 Save Company Settings
+              }
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  }
+</div>

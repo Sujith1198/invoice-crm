@@ -1,0 +1,9 @@
+{
+  "name": "customers",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/customers/src",
+  "prefix": "app",
+  "targets": {},
+  "tags": ["scope:customers", "type:feature"]
+}

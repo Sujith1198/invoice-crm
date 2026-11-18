@@ -1,0 +1,174 @@
+<div class="item-form-page">
+  <!-- Breadcrumb & Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h4 class="fw-bold text-dark mb-1">{{ isEditMode ? 'Edit Item' : 'Create New Item' }}</h4>
+      <p class="text-muted small mb-0">{{ isEditMode ? 'Update product specifications and customs references' : 'Add a product or service with tax and trade declarations' }}</p>
+    </div>
+    <a routerLink="/items" class="btn btn-sm btn-light border">
+      ← Back to Items
+    </a>
+  </div>
+
+  @if (loadingItem) {
+    <ui-loading text="Loading item specifications..."></ui-loading>
+  } @else {
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+        <form [formGroup]="itemForm" (ngSubmit)="onSubmit()">
+
+          <!-- Section 1: Item Details & Pricing -->
+          <h6 class="fw-bold text-dark mb-3 border-bottom pb-2">
+            1. Product & Pricing Configuration
+          </h6>
+
+          <div class="row g-3 mb-4">
+            <div class="col-12 col-md-6">
+              <label class="form-label">Item Name <span class="required-star">*</span></label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="e.g. Industrial Centrifugal Pump 50HP"
+                formControlName="item_name"
+                [class.is-invalid]="submitted && f['item_name'].errors"
+              />
+              @if (submitted && f['item_name'].errors) {
+                <div class="invalid-feedback">Item name is required</div>
+              }
+            </div>
+
+            <div class="col-12 col-md-3">
+              <label class="form-label">Item Cost / Default Price (₹) <span class="required-star">*</span></label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                class="form-control"
+                placeholder="0.00"
+                formControlName="item_cost"
+                [class.is-invalid]="submitted && f['item_cost'].errors"
+              />
+              @if (submitted && f['item_cost'].errors) {
+                <div class="invalid-feedback">Valid item cost is required</div>
+              }
+            </div>
+
+            <div class="col-12 col-md-3">
+              <label class="form-label">GST Tax (%) <span class="required-star">*</span></label>
+              <select class="form-select" formControlName="gst_percentage">
+                <option [value]="0">0% (Nil / Exempt)</option>
+                <option [value]="5">5% (Essential Goods)</option>
+                <option [value]="12">12% (Standard Low)</option>
+                <option [value]="18">18% (Standard Commercial)</option>
+                <option [value]="28">28% (Luxury / Heavy)</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label">Assign to Customer (Optional)</label>
+              <select class="form-select" formControlName="customer_id">
+                <option [ngValue]="null">-- General / Available for All Customers --</option>
+                @for (cust of customers; track cust.id) {
+                  <option [ngValue]="cust.id">
+                    {{ cust.full_name || (cust.first_name + ' ' + cust.last_name) }} {{ cust.company_name ? '(' + cust.company_name + ')' : '' }}
+                  </option>
+                }
+              </select>
+              <div class="form-text small">Associate this item/service with a specific customer for customer-based pricing and invoicing.</div>
+            </div>
+
+            <div class="col-12 col-md-3">
+              <label class="form-label">Item Status</label>
+              <select class="form-select" formControlName="status">
+                <option value="active">Active (Available for Invoicing)</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-3">
+              <div class="p-2 rounded-3 bg-light border border-light-subtle d-flex align-items-center gap-2 mt-4">
+                <div class="fs-5">💡</div>
+                <div class="small text-muted" style="font-size: 11px;">
+                  Custom customer items automatically appear during that customer's invoice creation.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Trade, Customs & Legal Declarations -->
+          <h6 class="fw-bold text-dark mb-3 border-bottom pb-2">
+            2. Customs Declarations & Trade Permits
+          </h6>
+
+          <div class="row g-3 mb-4">
+            <div class="col-12 col-md-6">
+              <label class="form-label">Import Declaration Details</label>
+              <textarea
+                rows="2"
+                class="form-control"
+                placeholder="e.g. IMP/2026/BLR/88219 - Cleared through ICD Bangalore"
+                formControlName="import_declaration"
+              ></textarea>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label">Export Declaration Details</label>
+              <textarea
+                rows="2"
+                class="form-control"
+                placeholder="e.g. EXP/DE/441092 - Outbound Port of Hamburg"
+                formControlName="export_declaration"
+              ></textarea>
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">Certificate of Origin (COO)</label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="e.g. COO-IND-2026-9912"
+                formControlName="certificate_of_origin"
+              />
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">XO Permit Reference</label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="e.g. XO-PMT-7821-B"
+                formControlName="xo_permit"
+              />
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">Amendment Reference</label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="e.g. AMD-02/RevA"
+                formControlName="amendment"
+              />
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="d-flex justify-content-end gap-3 pt-3 border-top">
+            <a routerLink="/items" class="btn btn-light px-4">
+              Cancel
+            </a>
+            <button type="submit" class="btn btn-orange px-4" [disabled]="saving">
+              @if (saving) {
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                Saving Item...
+              } @else {
+                {{ isEditMode ? 'Update Item' : 'Create Item' }}
+              }
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  }
+</div>

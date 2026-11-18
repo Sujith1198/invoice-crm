@@ -1,0 +1,179 @@
+/* ORANGE INVOICE DESIGN SYSTEM */
+:root {
+  --primary-orange: #FFAB00;
+  --secondary-orange: #FF9D00;
+  --accent-orange: #F77F23;
+  --deep-orange: #FF6200;
+  
+  --bg-color: #F5F5F5;
+  --card-bg: #FFFFFF;
+  --primary-text: #242424;
+  --secondary-text: #666666;
+  --border-color: #EAEAEA;
+  
+  --font-family-main: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+  font-family: var(--font-family-main);
+  background-color: var(--bg-color);
+  color: var(--primary-text);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Card Styling */
+.card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+}
+
+/* Custom Orange Buttons */
+.btn-orange {
+  background: linear-gradient(135deg, #FFAB00 0%, #FF9D00 100%);
+  color: #242424;
+  font-weight: 700;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(255, 171, 0, 0.25);
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-orange:hover, .btn-orange:focus {
+  background: linear-gradient(135deg, #FF9D00 0%, #F77F23 100%);
+  color: #111111;
+  box-shadow: 0 6px 16px rgba(247, 127, 35, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-orange-outline {
+  background: transparent;
+  color: #FF6200;
+  border: 1.5px solid #FFAB00;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.btn-orange-outline:hover {
+  background: #FFF8E1;
+  color: #FF6200;
+  border-color: #FF9D00;
+}
+
+/* Form inputs */
+.form-control, .form-select {
+  border-color: #EAEAEA;
+  border-radius: 8px;
+  font-size: 14px;
+  padding: 9px 12px;
+  color: var(--primary-text);
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: #FFAB00;
+  box-shadow: 0 0 0 3px rgba(255, 171, 0, 0.25);
+}
+
+.form-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #444444;
+  margin-bottom: 5px;
+}
+
+.required-star {
+  color: #FF6200;
+  font-weight: bold;
+}
+
+/* Tables */
+.table {
+  color: var(--primary-text);
+  vertical-align: middle;
+}
+
+.table th {
+  background-color: #FAFAFA;
+  color: #555555;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #EAEAEA;
+}
+
+.table td {
+  padding: 14px;
+  border-bottom: 1px solid #EAEAEA;
+  font-size: 13.5px;
+}
+
+.table-hover tbody tr:hover {
+  background-color: #FFFDF5;
+}
+
+/* Badges */
+.badge-success {
+  background-color: #E8F5E9;
+  color: #2E7D32;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+}
+
+.badge-warning {
+  background-color: #FFF3E0;
+  color: #E65100;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+}
+
+.badge-info {
+  background-color: #E1F5FE;
+  color: #0277BD;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+}
+
+.badge-danger {
+  background-color: #FFEBEE;
+  color: #C62828;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+}
+
+.badge-secondary {
+  background-color: #ECEFF1;
+  color: #455A64;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+}
+
+.badge-dark {
+  background-color: #E0E0E0;
+  color: #212121;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+}
+

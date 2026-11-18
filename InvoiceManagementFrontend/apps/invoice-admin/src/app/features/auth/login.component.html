@@ -1,0 +1,326 @@
+<div class="login-wrapper d-flex align-items-center justify-content-center min-vh-100 p-3">
+  <div class="card shadow-lg border-0 login-card p-4 p-md-5">
+
+    <!-- ========================================== -->
+    <!-- VIEW MODE 1: LOGIN FORM                    -->
+    <!-- ========================================== -->
+    @if (viewMode === 'login') {
+      <!-- Brand Header -->
+      <div class="text-center mb-4">
+        <div class="logo-circle mx-auto mb-3">
+          <span>⚡</span>
+        </div>
+        <h3 class="fw-bold text-dark mb-1">Welcome Back</h3>
+        <p class="text-muted small">Orange Invoicing & Customer Management System</p>
+      </div>
+
+      <!-- Form -->
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <div class="mb-3">
+          <label class="form-label">Email Address <span class="required-star">*</span></label>
+          <input
+            type="email"
+            class="form-control"
+            placeholder="e.g. admin@orangeinvoice.com"
+            formControlName="email"
+            [class.is-invalid]="submitted && f['email'].errors"
+          />
+          @if (submitted && f['email'].errors) {
+            <div class="invalid-feedback">Valid email address is required</div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <label class="form-label mb-0">Password <span class="required-star">*</span></label>
+            <a href="javascript:void(0)" class="small text-decoration-none fw-semibold" style="color: #ff6200;" (click)="openResetFlow()">Reset Password?</a>
+          </div>
+          <div class="input-group">
+            <input
+              [type]="showPassword ? 'text' : 'password'"
+              class="form-control"
+              placeholder="Enter password"
+              formControlName="password"
+              [class.is-invalid]="submitted && f['password'].errors"
+            />
+            <button
+              class="btn btn-outline-secondary border-start-0 d-flex align-items-center justify-content-center px-3"
+              type="button"
+              (click)="togglePasswordVisibility()"
+              [title]="showPassword ? 'Hide password' : 'View password'"
+              tabindex="-1"
+              style="border-color: #dee2e6; background-color: #ffffff; color: #64748b;"
+            >
+              @if (showPassword) {
+                <!-- Eye Slash Icon (Hide) -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7 7 0 0 0-2.79.588l.77.771A6 6 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755q-.247.248-.517.486z"/>
+                  <path d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829zm-2.943 1.299.822.822a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 0 2.829 2.829"/>
+                  <path d="M3.35 5.47q-.27.24-.518.487A13 13 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7 7 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709zm10.296 8.884-12-12 .708-.708 12 12z"/>
+                </svg>
+              } @else {
+                <!-- Eye Icon (View) -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
+                  <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
+                </svg>
+              }
+            </button>
+          </div>
+          @if (submitted && f['password'].errors) {
+            <div class="invalid-feedback d-block">Password is required</div>
+          }
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="rememberMe" checked>
+            <label class="form-check-label small text-muted" for="rememberMe">Remember me</label>
+          </div>
+          <span class="badge bg-warning-subtle text-dark border border-warning-subtle small px-2 py-1">Secure Sanctum API</span>
+        </div>
+
+        <button
+          type="submit"
+          class="btn btn-orange w-100 py-2 justify-content-center"
+          [disabled]="loading"
+        >
+          @if (loading) {
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Authenticating...
+          } @else {
+            Sign In to System →
+          }
+        </button>
+      </form>
+
+      <!-- Reset Password Only Area -->
+      <div class="mt-4 pt-3 border-top text-center">
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-warning text-dark fw-semibold px-3 py-2 shadow-sm d-inline-flex align-items-center gap-2 rounded-3"
+          style="border-color: #ff9d00; background-color: #fffbf2; font-size: 13px;"
+          (click)="openResetFlow()"
+        >
+          <span>🔑</span> Reset Password
+        </button>
+      </div>
+    }
+
+    <!-- ========================================== -->
+    <!-- VIEW MODE 2: PASSWORD RESET WORKFLOW       -->
+    <!-- ========================================== -->
+    @if (viewMode === 'reset') {
+      <!-- Reset Brand Header -->
+      <div class="text-center mb-3">
+        <div class="logo-circle mx-auto mb-2" style="background: linear-gradient(135deg, #ff9d00, #ff6200);">
+          <span>🔑</span>
+        </div>
+        <h4 class="fw-bold text-dark mb-1">Reset Password</h4>
+        <p class="text-muted small mb-3">Verify with 6-digit OTP sent to your email</p>
+
+        <!-- Stepper Indicators -->
+        <div class="stepper-indicator mb-3">
+          <div class="step-dot" [class.active]="resetStep === 1" [class.completed]="resetStep > 1">1</div>
+          <div class="step-line" [class.active]="resetStep > 1"></div>
+          <div class="step-dot" [class.active]="resetStep === 2" [class.completed]="resetStep > 2">2</div>
+          <div class="step-line" [class.active]="resetStep > 2"></div>
+          <div class="step-dot" [class.active]="resetStep === 3" [class.completed]="resetStep === 3">✓</div>
+        </div>
+      </div>
+
+      <!-- STEP 1: Enter Email & Request OTP -->
+      @if (resetStep === 1) {
+        <div>
+          <p class="text-muted small text-center mb-3">
+            Enter your registered login email address. We will dispatch a secure 6-digit verification OTP to this inbox.
+          </p>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Registered Email Address <span class="required-star">*</span></label>
+            <input
+              type="email"
+              class="form-control"
+              placeholder="e.g. admin@orangeinvoice.com or your email"
+              [(ngModel)]="resetEmail"
+              [disabled]="isSendingOtp"
+            />
+          </div>
+
+          <button
+            type="button"
+            class="btn btn-orange w-100 py-2 justify-content-center mb-3"
+            [disabled]="isSendingOtp || !resetEmail"
+            (click)="onSendOtp()"
+          >
+            @if (isSendingOtp) {
+              <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              Sending OTP via SMTP...
+            } @else {
+              Send 6-Digit OTP Code →
+            }
+          </button>
+
+          <div class="text-center">
+            <a href="javascript:void(0)" class="small text-decoration-none text-muted" (click)="backToLogin()">
+              ← Back to Sign In
+            </a>
+          </div>
+        </div>
+      }
+
+      <!-- STEP 2: Enter 6-digit OTP & New Password -->
+      @if (resetStep === 2) {
+        <div>
+          <!-- Success Notice -->
+          <div class="alert alert-warning py-2 px-3 small border-0 rounded-3 mb-3" style="background-color: #fff8e6; color: #b45309; border-left: 4px solid #ff9d00 !important;">
+            <div class="fw-semibold">OTP Dispatched!</div>
+            <div class="text-truncate">A 6-digit OTP was sent to <strong>{{ resetEmail }}</strong>. Valid for 15 minutes.</div>
+          </div>
+
+          <!-- 6-Digit OTP Field -->
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Enter 6-Digit OTP Code <span class="required-star">*</span></label>
+            <input
+              type="text"
+              class="form-control otp-input"
+              maxlength="6"
+              placeholder="••••••"
+              [(ngModel)]="resetOtp"
+              [disabled]="isResettingPassword"
+              autocomplete="one-time-code"
+            />
+            <div class="form-text small text-muted text-center mt-1">
+              Enter the 6-digit numeric verification code
+            </div>
+          </div>
+
+          <!-- New Password Field -->
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">New Password <span class="required-star">*</span></label>
+            <div class="input-group">
+              <input
+                [type]="showNewPassword ? 'text' : 'password'"
+                class="form-control"
+                placeholder="Enter new password (min. 6 chars)"
+                [(ngModel)]="newPassword"
+                [disabled]="isResettingPassword"
+              />
+              <button
+                class="btn btn-outline-secondary border-start-0 d-flex align-items-center justify-content-center px-3"
+                type="button"
+                (click)="toggleNewPasswordVisibility()"
+                tabindex="-1"
+                style="border-color: #dee2e6; background-color: #ffffff; color: #64748b;"
+              >
+                @if (showNewPassword) {
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7 7 0 0 0-2.79.588l.77.771A6 6 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755q-.247.248-.517.486z"/>
+                    <path d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829zm-2.943 1.299.822.822a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 0 2.829 2.829"/>
+                    <path d="M3.35 5.47q-.27.24-.518.487A13 13 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7 7 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709zm10.296 8.884-12-12 .708-.708 12 12z"/>
+                  </svg>
+                } @else {
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
+                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
+                  </svg>
+                }
+              </button>
+            </div>
+          </div>
+
+          <!-- Confirm New Password Field -->
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Confirm New Password <span class="required-star">*</span></label>
+            <div class="input-group">
+              <input
+                [type]="showConfirmPassword ? 'text' : 'password'"
+                class="form-control"
+                placeholder="Re-enter new password"
+                [(ngModel)]="confirmPassword"
+                [disabled]="isResettingPassword"
+              />
+              <button
+                class="btn btn-outline-secondary border-start-0 d-flex align-items-center justify-content-center px-3"
+                type="button"
+                (click)="toggleConfirmPasswordVisibility()"
+                tabindex="-1"
+                style="border-color: #dee2e6; background-color: #ffffff; color: #64748b;"
+              >
+                @if (showConfirmPassword) {
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7 7 0 0 0-2.79.588l.77.771A6 6 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755q-.247.248-.517.486z"/>
+                    <path d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829zm-2.943 1.299.822.822a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 0 2.829 2.829"/>
+                    <path d="M3.35 5.47q-.27.24-.518.487A13 13 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7 7 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709zm10.296 8.884-12-12 .708-.708 12 12z"/>
+                  </svg>
+                } @else {
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
+                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
+                  </svg>
+                }
+              </button>
+            </div>
+          </div>
+
+          <!-- Resend OTP Link -->
+          <div class="d-flex justify-content-between align-items-center mb-3 small">
+            <span class="text-muted">Didn't receive code?</span>
+            @if (resendCountdown > 0) {
+              <span class="text-muted">Resend in {{ resendCountdown }}s</span>
+            } @else {
+              <a href="javascript:void(0)" class="text-orange fw-semibold text-decoration-none" (click)="onSendOtp()">
+                Resend OTP
+              </a>
+            }
+          </div>
+
+          <!-- Submit Button -->
+          <button
+            type="button"
+            class="btn btn-orange w-100 py-2 justify-content-center mb-3"
+            [disabled]="isResettingPassword || resetOtp.length !== 6 || !newPassword || !confirmPassword"
+            (click)="onResetPassword()"
+          >
+            @if (isResettingPassword) {
+              <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              Updating Database...
+            } @else {
+              Update Password &amp; Save →
+            }
+          </button>
+
+          <div class="text-center">
+            <a href="javascript:void(0)" class="small text-decoration-none text-muted" (click)="backToLogin()">
+              ← Back to Sign In
+            </a>
+          </div>
+        </div>
+      }
+
+      <!-- STEP 3: Password Updated Success -->
+      @if (resetStep === 3) {
+        <div class="text-center py-2">
+          <div class="mb-3 text-success" style="font-size: 52px; line-height: 1;">
+            ✓
+          </div>
+          <h5 class="fw-bold text-dark mb-2">Password Updated Successfully!</h5>
+          <p class="text-muted small mb-4">
+            Your new password has been securely hashed with bcrypt and updated in Laravel &amp; the database for <strong>{{ resetEmail }}</strong>.
+          </p>
+
+          <button
+            type="button"
+            class="btn btn-orange w-100 py-2 justify-content-center mb-2"
+            (click)="finishResetAndLogin()"
+          >
+            Proceed to Sign In →
+          </button>
+        </div>
+      }
+    }
+
+  </div>
+
+  <ui-toast-container></ui-toast-container>
+</div>

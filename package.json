@@ -1,0 +1,10 @@
+{
+  "name": "invoice-crm-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "npm --prefix InvoiceManagementFrontend start",
+    "build": "npm --prefix InvoiceManagementFrontend run build",
+    "serve": "npm --prefix InvoiceManagementFrontend start"
+  }
+}

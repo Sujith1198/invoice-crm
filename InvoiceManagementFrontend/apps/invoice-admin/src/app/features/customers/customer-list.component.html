@@ -1,0 +1,171 @@
+<div class="customer-page">
+  <!-- Header -->
+  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+    <div>
+      <h4 class="fw-bold text-dark mb-1">Customer Management</h4>
+      <p class="text-muted small mb-0">Manage commercial clients, payment terms, and multiple contact numbers</p>
+    </div>
+    <a routerLink="/customers/create" class="btn btn-orange">
+      <span>➕</span> Add Customer
+    </a>
+  </div>
+
+  <!-- Filters & Search Toolbar -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-3">
+      <div class="row g-2 align-items-center">
+        <!-- Search -->
+        <div class="col-12 col-md-4">
+          <div class="position-relative">
+            <input
+              type="text"
+              class="form-control form-control-sm ps-4"
+              placeholder="Search by name, company, email, phone..."
+              [(ngModel)]="searchQuery"
+              (keyup.enter)="onSearch()"
+            />
+            <span class="position-absolute top-50 start-0 translate-middle-y ps-2 text-muted small">🔍</span>
+          </div>
+        </div>
+
+        <!-- City Filter -->
+        <div class="col-6 col-md-3">
+          <select class="form-select form-select-sm" [(ngModel)]="selectedCity" (change)="onFilterChange()">
+            <option value="">All Cities</option>
+            @for (city of cities; track city) {
+              <option [value]="city">{{ city }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Payment Method Filter -->
+        <div class="col-6 col-md-3">
+          <select class="form-select form-select-sm" [(ngModel)]="selectedPaymentMethod" (change)="onFilterChange()">
+            <option value="">All Payment Terms</option>
+            <option value="Daily Pay">Daily Pay</option>
+            <option value="Monthly Pay">Monthly Pay</option>
+            <option value="15 Days Pay">15 Days Pay</option>
+          </select>
+        </div>
+
+        <!-- Reset / Search Actions -->
+        <div class="col-12 col-md-2 d-flex gap-2">
+          <button class="btn btn-sm btn-orange w-100 justify-content-center" (click)="onSearch()">
+            Filter
+          </button>
+          <button class="btn btn-sm btn-light border" (click)="resetFilters()" title="Reset Filters">
+            ↺
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customers Table -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      @if (loading) {
+        <ui-loading text="Loading customers directory..."></ui-loading>
+      } @else if (pagination && pagination.data && pagination.data.length > 0) {
+        <div class="table-responsive">
+          <table class="table table-hover mb-0 align-middle">
+            <thead>
+              <tr>
+                <th style="width: 50px;">S.No</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Company Name</th>
+                <th>Phone Number</th>
+                <th>Email</th>
+                <th>City</th>
+                <th>Payment Method</th>
+                <th>Status</th>
+                <th class="text-end" style="width: 140px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of pagination.data; track c.id; let idx = $index) {
+                <tr>
+                  <td class="text-muted small">
+                    {{ ((pagination.current_page - 1) * pagination.per_page) + idx + 1 }}
+                  </td>
+                  <td class="fw-semibold text-dark">{{ c.first_name }}</td>
+                  <td class="fw-semibold text-dark">{{ c.last_name }}</td>
+                  <td>
+                    <span class="text-dark">{{ c.company_name || '-' }}</span>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center gap-1">
+                      <span>{{ c.primary_phone || '-' }}</span>
+                      @if (c.phones && c.phones.length > 1) {
+                        <span class="badge bg-light text-dark border small" [title]="'Has ' + c.phones.length + ' registered numbers'">
+                          +{{ c.phones.length - 1 }}
+                        </span>
+                      }
+                    </div>
+                  </td>
+                  <td>
+                    <a [href]="'mailto:' + c.email" class="text-decoration-none text-muted small">
+                      {{ c.email }}
+                    </a>
+                  </td>
+                  <td>{{ c.city }}</td>
+                  <td>
+                    <span class="badge bg-light text-dark border">{{ c.payment_method }}</span>
+                  </td>
+                  <td>
+                    <span [class]="'badge ' + getBadgeClass(c.status)">
+                      {{ c.status }}
+                    </span>
+                  </td>
+                  <td class="text-end text-nowrap">
+                    <a [routerLink]="['/customers', c.id]" class="btn btn-sm btn-light border p-1 me-1" title="View Customer Details">
+                      👁️
+                    </a>
+                    <a [routerLink]="['/customers/edit', c.id]" class="btn btn-sm btn-light border p-1 me-1" title="Edit Customer">
+                      ✏️
+                    </a>
+                    <button class="btn btn-sm btn-outline-danger p-1" (click)="openDeleteConfirm(c)" title="Delete Customer">
+                      🗑️
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination Component -->
+        <div class="px-4">
+          <ui-pagination
+            [currentPage]="pagination.current_page"
+            [totalPages]="pagination.last_page"
+            [total]="pagination.total"
+            [from]="pagination.from"
+            [to]="pagination.to"
+            (pageChange)="onPageChange($event)"
+          ></ui-pagination>
+        </div>
+      } @else {
+        <ui-empty-state
+          title="No Customers Found"
+          description="No customers match your active filters or search criteria."
+          actionText="Create Customer"
+          (onAction)="resetFilters()"
+        ></ui-empty-state>
+      }
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Dialog -->
+  <ui-confirm-dialog
+    [isOpen]="isDeleteModalOpen"
+    title="Delete Customer"
+    [message]="'Are you sure you want to delete customer ' + (customerToDelete?.full_name || '') + '? This will preserve historic invoices but archive the customer record.'"
+    confirmText="Delete Customer"
+    cancelText="Cancel"
+    [isDanger]="true"
+    (onConfirm)="confirmDelete()"
+    (onCancel)="isDeleteModalOpen = false"
+  ></ui-confirm-dialog>
+</div>

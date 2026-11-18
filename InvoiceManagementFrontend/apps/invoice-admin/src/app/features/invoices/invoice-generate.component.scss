@@ -1,0 +1,74 @@
+.invoice-generate-page {
+  /* Allow card and dropdown overflow without clipping */
+  .card-line-items {
+    overflow: visible !important;
+  }
+
+  .items-table-wrapper {
+    overflow: visible !important;
+    position: relative;
+    min-height: 220px;
+  }
+
+  .item-cell-relative {
+    position: relative;
+    overflow: visible !important;
+  }
+
+  /* Customer autocomplete dropdown */
+  .customer-autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    max-height: 280px;
+    overflow-y: auto;
+    z-index: 1070;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    border: 1px solid #FFE0B2;
+    border-radius: 8px;
+  }
+
+  /* Items autocomplete dropdown - floating unobstructed with generous width */
+  .autocomplete-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    width: 460px;
+    min-width: 420px;
+    max-width: 560px;
+    background: #ffffff;
+    max-height: 280px;
+    overflow-y: auto;
+    z-index: 1080;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2) !important;
+    border: 1px solid #FFD180;
+    border-radius: 8px;
+  }
+
+  .autocomplete-item {
+    cursor: pointer;
+    padding: 10px 14px;
+    border-bottom: 1px solid #f2f2f2;
+    transition: background-color 0.15s ease-in-out;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:hover {
+      background-color: #FFF8E1;
+    }
+
+    .item-title {
+      font-size: 13px;
+      word-break: break-word;
+    }
+  }
+
+  .table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+}

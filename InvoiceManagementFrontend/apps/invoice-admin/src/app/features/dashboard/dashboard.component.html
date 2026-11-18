@@ -1,0 +1,318 @@
+<div class="dashboard-page">
+  <!-- Page Header -->
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+      <h4 class="fw-bold text-dark mb-1">Financial & Sales Overview</h4>
+      <p class="text-muted small mb-0">Real-time revenue, verified payments, and customer tracking</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-sm btn-light border d-flex align-items-center gap-1" (click)="loadData()">
+        <span>🔄</span> Refresh
+      </button>
+      <a routerLink="/invoices/generate" class="btn btn-sm btn-orange">
+        <span>➕</span> Generate New Invoice
+      </a>
+    </div>
+  </div>
+
+  @if (loading) {
+    <ui-loading text="Loading dashboard statistics..."></ui-loading>
+  } @else if (data) {
+    <!-- 4 Main Statistics Cards -->
+    <div class="row g-3 mb-4">
+      <!-- 1. Total Customers -->
+      <div class="col-12 col-sm-6 col-xl-3">
+        <ui-stat-card
+          label="Total Active Customers"
+          [value]="data.statistics.total_customers.value ?? 0"
+          icon="👥"
+          iconBg="#FFF3E0"
+          [badgeText]="(data.statistics.total_customers.growth_pct ?? 0) + '%'"
+          [isPositive]="(data.statistics.total_customers.growth_pct ?? 0) >= 0"
+          [comparisonText]="data.statistics.total_customers.comparison_text || 'vs last month'"
+        ></ui-stat-card>
+      </div>
+
+      <!-- 2. Today's Invoices -->
+      <div class="col-12 col-sm-6 col-xl-3">
+        <ui-stat-card
+          label="Today's Invoices"
+          [value]="data.statistics.today_invoices.value ?? 0"
+          icon="📄"
+          iconBg="#E1F5FE"
+          [badgeText]="(data.statistics.today_invoices.diff ?? 0) >= 0 ? '+' + (data.statistics.today_invoices.diff ?? 0) : '' + (data.statistics.today_invoices.diff ?? 0)"
+          [isPositive]="(data.statistics.today_invoices.diff ?? 0) >= 0"
+          [comparisonText]="data.statistics.today_invoices.comparison_text || '0 vs yesterday'"
+        ></ui-stat-card>
+      </div>
+
+      <!-- 3. Total Revenue -->
+      <div class="col-12 col-sm-6 col-xl-3">
+        <ui-stat-card
+          label="Total Revenue (Collected)"
+          [value]="data.statistics.total_revenue.formatted || '₹0.00'"
+          icon="💰"
+          iconBg="#E8F5E9"
+          [badgeText]="'Verified'"
+          [isPositive]="true"
+          [comparisonText]="data.statistics.total_revenue.comparison_text || 'Lifetime verified collections'"
+        ></ui-stat-card>
+      </div>
+
+      <!-- 4. Monthly Revenue -->
+      <div class="col-12 col-sm-6 col-xl-3">
+        <ui-stat-card
+          label="Monthly Revenue"
+          [value]="data.statistics.monthly_revenue.formatted || '₹0.00'"
+          icon="📈"
+          iconBg="#FFF8E1"
+          [badgeText]="(data.statistics.monthly_revenue.growth_pct ?? 0) + '%'"
+          [isPositive]="(data.statistics.monthly_revenue.growth_pct ?? 0) >= 0"
+          [comparisonText]="data.statistics.monthly_revenue.comparison_text || 'vs previous month'"
+        ></ui-stat-card>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-3 mb-4">
+      <!-- Daily Invoices Chart (Interactive SVG) -->
+      <div class="col-12 col-lg-7">
+        <div class="card h-100 border-0 shadow-sm">
+          <div class="card-header bg-white border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="fw-bold text-dark mb-0">Daily Invoice Generation</h6>
+              <span class="text-muted small">Volume trends over the last 14 days</span>
+            </div>
+            <span class="badge bg-light text-dark border">Last 14 Days</span>
+          </div>
+          <div class="card-body px-4 py-3">
+            @if (data.charts.daily_invoices.length > 0) {
+              <div class="chart-container py-2">
+                <svg viewBox="0 0 650 200" class="w-100" style="overflow: visible;">
+                  <!-- Grid Lines -->
+                  <line x1="40" y1="20" x2="630" y2="20" stroke="#F0F0F0" stroke-dasharray="3"/>
+                  <line x1="40" y1="80" x2="630" y2="80" stroke="#F0F0F0" stroke-dasharray="3"/>
+                  <line x1="40" y1="140" x2="630" y2="140" stroke="#F0F0F0" stroke-dasharray="3"/>
+                  <line x1="40" y1="170" x2="630" y2="170" stroke="#EAEAEA" stroke-width="1.5"/>
+
+                  <!-- Y-Axis labels -->
+                  <text x="30" y="24" fill="#999" font-size="10" text-anchor="end">Max</text>
+                  <text x="30" y="84" fill="#999" font-size="10" text-anchor="end">Mid</text>
+                  <text x="30" y="174" fill="#999" font-size="10" text-anchor="end">0</text>
+
+                  <!-- Bars -->
+                  @for (day of data.charts.daily_invoices; track day.date; let idx = $index) {
+                    @let barX = 55 + (idx * 41);
+                    @let maxCount = getMaxDailyCount();
+                    @let barH = maxCount > 0 ? (day.count / maxCount) * 140 : 10;
+                    @let barY = 170 - barH;
+
+                    <rect
+                      [attr.x]="barX"
+                      [attr.y]="barY"
+                      width="24"
+                      [attr.height]="barH"
+                      rx="4"
+                      fill="url(#orangeGradient)"
+                      class="chart-bar"
+                    >
+                      <title>{{ day.date }}: {{ day.count }} Invoices</title>
+                    </rect>
+                    <!-- Count label on top of bar -->
+                    <text
+                      [attr.x]="barX + 12"
+                      [attr.y]="barY - 4"
+                      fill="#FF6200"
+                      font-size="10"
+                      font-weight="bold"
+                      text-anchor="middle"
+                    >
+                      {{ day.count }}
+                    </text>
+                    <!-- Date Label on X axis -->
+                    <text
+                      [attr.x]="barX + 12"
+                      y="188"
+                      fill="#666"
+                      font-size="9"
+                      text-anchor="middle"
+                    >
+                      {{ day.label }}
+                    </text>
+                  }
+
+                  <defs>
+                    <linearGradient id="orangeGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#FFAB00"/>
+                      <stop offset="100%" stop-color="#FF6200"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+            } @else {
+              <div class="py-5 text-center text-muted small">
+                No daily invoice generation volume (0).
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Invoice Payment Status Distribution Chart -->
+      <div class="col-12 col-lg-5">
+        <div class="card h-100 border-0 shadow-sm">
+          <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+            <h6 class="fw-bold text-dark mb-0">Invoice Status Breakdown</h6>
+            <span class="text-muted small">Distribution of active invoices</span>
+          </div>
+          <div class="card-body px-4 py-3">
+            <div class="d-flex flex-column gap-3 mt-2">
+              @for (item of statusList; track item.label) {
+                <div>
+                  <div class="d-flex justify-content-between align-items-center small mb-1">
+                    <span class="fw-semibold text-secondary">{{ item.label }}</span>
+                    <span class="fw-bold text-dark">{{ item.count }} ({{ item.percent }}%)</span>
+                  </div>
+                  <div class="progress" style="height: 8px; border-radius: 4px; background-color: #F0F0F0;">
+                    <div
+                      class="progress-bar"
+                      [style.width.%]="item.percent"
+                      [style.background-color]="item.color"
+                      role="progressbar"
+                    ></div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Monthly Revenue Trend (From Actual Payments) -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-white border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+        <div>
+          <h6 class="fw-bold text-dark mb-0">Monthly Revenue Collection Trend</h6>
+          <span class="text-muted small">Based exclusively on confirmed customer payments</span>
+        </div>
+        <span class="badge bg-success-subtle text-success border border-success-subtle">Collections Verified</span>
+      </div>
+      <div class="card-body px-4 py-3">
+        @if (data.charts.monthly_revenue.length > 0) {
+          <div class="row g-3">
+            @for (m of data.charts.monthly_revenue; track m.month) {
+              <div class="col-6 col-md-4 col-lg-2">
+                <div class="p-3 rounded-3 text-center" style="background: #FFFDF9; border: 1px solid #FFE0B2;">
+                  <div class="small text-muted mb-1">{{ m.month }}</div>
+                  <div class="fw-bold fs-6" style="color: #FF6200;">₹{{ formatNumber(m.revenue) }}</div>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="py-4 text-center text-muted small">
+            No monthly collections recorded yet (₹0.00).
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Tables Row: Recent Invoices & Recent Customers -->
+    <div class="row g-3">
+      <!-- Recent Invoices -->
+      <div class="col-12 col-xl-7">
+        <div class="card h-100 border-0 shadow-sm">
+          <div class="card-header bg-white border-0 pt-4 px-4 pb-2 d-flex justify-content-between align-items-center">
+            <h6 class="fw-bold text-dark mb-0">Recent Invoices</h6>
+            <a routerLink="/invoices" class="btn btn-sm btn-link text-decoration-none p-0" style="color: #FF6200;">
+              View All →
+            </a>
+          </div>
+          <div class="card-body p-0">
+            @if (data.recent_invoices.length > 0) {
+              <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                  <thead>
+                    <tr>
+                      <th>Invoice #</th>
+                      <th>Customer</th>
+                      <th>Date</th>
+                      <th class="text-end">Grand Total</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (inv of data.recent_invoices; track inv.id) {
+                      <tr>
+                        <td>
+                          <a [routerLink]="['/invoices', inv.id]" class="fw-bold text-decoration-none" style="color: #FF6200;">
+                            {{ inv.invoice_number }}
+                          </a>
+                        </td>
+                        <td>
+                          <div class="fw-semibold text-dark">{{ inv.customer_name }}</div>
+                          <div class="text-muted small">{{ inv.company_name || '-' }}</div>
+                        </td>
+                        <td>{{ formatDate(inv.invoice_date) }}</td>
+                        <td class="text-end fw-bold">{{ formatCurrency(inv.grand_total) }}</td>
+                        <td>
+                          <span [class]="'badge ' + getBadgeClass(inv.status)">
+                            {{ inv.status }}
+                          </span>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <div class="p-4 text-center text-muted small">
+                No invoices recorded yet (0). Click "Generate New Invoice" to create one.
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Customers -->
+      <div class="col-12 col-xl-5">
+        <div class="card h-100 border-0 shadow-sm">
+          <div class="card-header bg-white border-0 pt-4 px-4 pb-2 d-flex justify-content-between align-items-center">
+            <h6 class="fw-bold text-dark mb-0">Recent Customers</h6>
+            <a routerLink="/customers" class="btn btn-sm btn-link text-decoration-none p-0" style="color: #FF6200;">
+              Manage →
+            </a>
+          </div>
+          <div class="card-body p-0">
+            @if (data.recent_customers.length > 0) {
+              <div class="list-group list-group-flush">
+                @for (cust of data.recent_customers; track cust.id) {
+                  <div class="list-group-item d-flex justify-content-between align-items-center px-4 py-3 border-light-subtle">
+                    <div class="d-flex align-items-center gap-3">
+                      <div class="avatar-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; background: #FFF3E0; color: #FF6200; font-weight: bold;">
+                        {{ (cust.first_name || 'C').charAt(0) }}
+                      </div>
+                      <div>
+                        <div class="fw-semibold text-dark">{{ cust.full_name || cust.first_name }}</div>
+                        <div class="text-muted small">{{ cust.company_name || cust.email }}</div>
+                      </div>
+                    </div>
+                    <div class="text-end">
+                      <span class="badge bg-light text-dark border">{{ cust.payment_method }}</span>
+                      <div class="small text-muted mt-1">{{ cust.primary_phone || '-' }}</div>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="p-4 text-center text-muted small">
+                No customers added yet (0).
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

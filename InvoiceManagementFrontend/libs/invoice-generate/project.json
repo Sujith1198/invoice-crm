@@ -1,0 +1,9 @@
+{
+  "name": "invoice-generate",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/invoice-generate/src",
+  "prefix": "app",
+  "targets": {},
+  "tags": ["scope:invoices", "type:feature"]
+}
