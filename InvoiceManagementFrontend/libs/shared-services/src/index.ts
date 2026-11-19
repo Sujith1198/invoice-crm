@@ -15,6 +15,7 @@ import {
   Payment,
   PendingNotification,
   User,
+  DocumentUpload,
 } from '@invoice-mgmt/shared-models';
 
 export const API_BASE_URL = (typeof window !== 'undefined' && (window as any).__ORANGE_API_URL__)
@@ -370,5 +371,62 @@ export class NotificationService {
     return this.http.post<any>(`${API_BASE_URL}/notifications/approve-payment/${invoiceId}`, {}).pipe(
       tap(() => this.triggerRefresh())
     );
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class DocumentUploadService {
+  private http = inject(HttpClient);
+
+  getDocuments(params: { page?: number; per_page?: number; search?: string; status?: string; from_date?: string; to_date?: string } = {}): Observable<ApiResponse<PaginatedResponse<DocumentUpload>>> {
+    let httpParams = new HttpParams();
+    Object.keys(params).forEach(key => {
+      const val = (params as any)[key];
+      if (val !== undefined && val !== null && val !== '') {
+        httpParams = httpParams.set(key, val.toString());
+      }
+    });
+    return this.http.get<ApiResponse<PaginatedResponse<DocumentUpload>>>(`${API_BASE_URL}/documents`, { params: httpParams });
+  }
+
+  getDocument(id: number): Observable<ApiResponse<DocumentUpload>> {
+    return this.http.get<ApiResponse<DocumentUpload>>(`${API_BASE_URL}/documents/${id}`);
+  }
+
+  uploadDocument(file: File, confirmDuplicate = false): Observable<any> {
+    const formData = new FormData();
+    formData.append('document', file);
+    if (confirmDuplicate) {
+      formData.append('confirm_duplicate', '1');
+    }
+    return this.http.post<any>(`${API_BASE_URL}/documents/upload`, formData);
+  }
+
+  updateExtractedData(id: number, data: any): Observable<ApiResponse<DocumentUpload>> {
+    return this.http.put<ApiResponse<DocumentUpload>>(`${API_BASE_URL}/documents/${id}/extraction`, data);
+  }
+
+  retryExtraction(id: number): Observable<ApiResponse<DocumentUpload>> {
+    return this.http.post<ApiResponse<DocumentUpload>>(`${API_BASE_URL}/documents/${id}/retry`, {});
+  }
+
+  generateDraftInvoice(id: number, payload: any): Observable<ApiResponse<{ invoice: Invoice; document: DocumentUpload }>> {
+    return this.http.post<ApiResponse<{ invoice: Invoice; document: DocumentUpload }>>(`${API_BASE_URL}/documents/${id}/generate-draft`, payload);
+  }
+
+  deleteDocument(id: number): Observable<ApiResponse<any>> {
+    return this.http.delete<ApiResponse<any>>(`${API_BASE_URL}/documents/${id}`);
+  }
+
+  getPreviewUrl(id: number): string {
+    return `${API_BASE_URL}/documents/${id}/preview`;
+  }
+
+  getDownloadUrl(id: number): string {
+    return `${API_BASE_URL}/documents/${id}/download`;
+  }
+
+  finalizeInvoice(invoiceId: number): Observable<ApiResponse<Invoice>> {
+    return this.http.post<ApiResponse<Invoice>>(`${API_BASE_URL}/invoices/${invoiceId}/finalize`, {});
   }
 }

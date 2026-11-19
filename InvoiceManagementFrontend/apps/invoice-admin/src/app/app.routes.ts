@@ -68,6 +68,13 @@ export const routes: Routes = [
         canActivate: [authGuard],
         loadComponent: () => import('./features/items/item-form.component').then(m => m.ItemFormComponent),
       },
+      // Upload Document
+      {
+        path: 'upload-document',
+        data: { screen: 'upload_document' },
+        canActivate: [authGuard],
+        loadComponent: () => import('./features/upload-document/upload-document.component').then(m => m.UploadDocumentComponent),
+      },
       // Invoices
       {
         path: 'invoices',

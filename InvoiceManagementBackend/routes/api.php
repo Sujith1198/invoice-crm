@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DocumentUploadController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\NotificationController;
@@ -52,7 +53,19 @@ Route::group(['middleware' => []], function () {
     Route::get('/invoices/next-number', [InvoiceController::class, 'nextNumber']);
     Route::post('/invoices/{invoice}/payments', [InvoiceController::class, 'recordPayment']);
     Route::post('/invoices/{invoice}/send-email', [InvoiceController::class, 'sendEmail']);
+    Route::post('/invoices/{invoice}/finalize', [InvoiceController::class, 'finalize']);
     Route::apiResource('invoices', InvoiceController::class);
+
+    // Document Upload & OCR / PDF Parsing
+    Route::get('/documents', [DocumentUploadController::class, 'index']);
+    Route::post('/documents/upload', [DocumentUploadController::class, 'upload']);
+    Route::get('/documents/{document}', [DocumentUploadController::class, 'show']);
+    Route::put('/documents/{document}/extraction', [DocumentUploadController::class, 'updateExtraction']);
+    Route::post('/documents/{document}/retry', [DocumentUploadController::class, 'retry']);
+    Route::post('/documents/{document}/generate-draft', [DocumentUploadController::class, 'generateDraft']);
+    Route::get('/documents/{document}/preview', [DocumentUploadController::class, 'preview']);
+    Route::get('/documents/{document}/download', [DocumentUploadController::class, 'download']);
+    Route::delete('/documents/{document}', [DocumentUploadController::class, 'destroy']);
 
     // Notifications (Pending payments: Daily, 15 Days, Monthly)
     Route::get('/notifications/pending-payments', [NotificationController::class, 'pendingPayments']);

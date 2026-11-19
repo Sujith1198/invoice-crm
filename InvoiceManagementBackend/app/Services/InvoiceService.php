@@ -137,6 +137,7 @@ class InvoiceService
             }
 
             $invoice = Invoice::create([
+                'document_upload_id' => $data['document_upload_id'] ?? null,
                 'invoice_number' => $invoiceNumber,
                 'invoice_date' => $data['invoice_date'] ?? date('Y-m-d'),
                 'due_date' => $data['due_date'] ?? date('Y-m-d', strtotime('+30 days')),

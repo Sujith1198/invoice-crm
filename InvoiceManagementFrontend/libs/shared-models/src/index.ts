@@ -250,4 +250,116 @@ export interface NotificationResponse {
   all: PendingNotification[];
 }
 
+export type DocumentProcessingStatus =
+  | 'Uploaded'
+  | 'Reading PDF'
+  | 'Extracting Information'
+  | 'Review Required'
+  | 'Draft Created'
+  | 'Failed';
+
+export interface ExtractedCustomer {
+  first_name: string;
+  last_name: string;
+  company_name?: string;
+  email: string;
+  phone: string;
+  address_line1: string;
+  address_line2?: string;
+  city: string;
+  country: string;
+  payment_method?: string;
+}
+
+export interface MatchedCustomer {
+  id: number;
+  name: string;
+  first_name: string;
+  last_name: string;
+  company_name?: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  payment_method?: string;
+  match_type: string;
+  confidence: number;
+}
+
+export interface ExtractedInvoiceDetails {
+  document_number: string;
+  invoice_date: string;
+  due_date: string;
+  payment_terms: string;
+  payment_method: string;
+  currency: string;
+  notes?: string;
+}
+
+export interface ExtractedItem {
+  item_name: string;
+  description?: string;
+  quantity: number;
+  unit_price: number;
+  gst_percentage: number;
+  amount: number;
+  matched_item_id?: number | null;
+  matched_item_name?: string | null;
+  is_matched: boolean;
+  confidence?: number;
+  create_as_new_item?: boolean;
+}
+
+export interface ExtractedTotals {
+  subtotal: number;
+  total_gst: number;
+  discount: number;
+  additional_charges: number;
+  grand_total: number;
+}
+
+export interface ExtractionValidation {
+  is_valid: boolean;
+  confidence: 'high' | 'medium' | 'low';
+  missing_fields: string[];
+  calculation_errors: string[];
+  customer_matched: boolean;
+  unmatched_items_count: number;
+}
+
+export interface ExtractedData {
+  raw_text_preview?: string;
+  page_count: number;
+  is_scanned: boolean;
+  ocr_attempted?: boolean;
+  ocr_available?: boolean;
+  customer: ExtractedCustomer;
+  customer_match?: MatchedCustomer | null;
+  invoice: ExtractedInvoiceDetails;
+  items: ExtractedItem[];
+  totals: ExtractedTotals;
+  validation: ExtractionValidation;
+}
+
+export interface DocumentUpload {
+  id: number;
+  file_name: string;
+  original_name: string;
+  file_path: string;
+  file_size: number;
+  file_hash: string;
+  mime_type: string;
+  status: DocumentProcessingStatus;
+  extracted_data?: ExtractedData | null;
+  error_message?: string | null;
+  invoice_id?: number | null;
+  invoice?: Invoice | null;
+  user_id?: number | null;
+  user?: User | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+
 

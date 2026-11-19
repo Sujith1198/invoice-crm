@@ -134,6 +134,17 @@ class InvoiceController extends Controller
         ]);
     }
 
+    public function finalize(Invoice $invoice): JsonResponse
+    {
+        $invoice->update(['status' => 'Generated']);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Invoice #{$invoice->invoice_number} has been finalized and issued.",
+            'data' => $invoice->fresh(['items', 'customer']),
+        ]);
+    }
+
     public function pdf(Invoice $invoice)
     {
         $pdf = $this->invoiceService->generatePdf($invoice);

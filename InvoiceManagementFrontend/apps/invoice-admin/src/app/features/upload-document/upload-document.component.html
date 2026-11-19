@@ -1,0 +1,1104 @@
+<div class="container-fluid p-4 upload-document-page">
+  <!-- Page Header -->
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+      <h2 class="fw-bold text-dark mb-1 d-flex align-items-center gap-2">
+        <span class="header-icon">📤</span>
+        <span>Upload Document</span>
+      </h2>
+      <p class="text-muted small mb-0">
+        Upload commercial PDF invoices or purchase orders to automatically extract data, match customers and items, and create draft invoices.
+      </p>
+    </div>
+
+    <!-- Tab Segmented Controls -->
+    <div class="btn-group shadow-sm bg-white p-1 rounded-3 border">
+      <button
+        type="button"
+        class="btn btn-sm rounded-2 px-3 fw-semibold transition-all"
+        [class.btn-orange]="activeTab === 'upload'"
+        [class.btn-light]="activeTab !== 'upload'"
+        (click)="setTab('upload')"
+      >
+        📄 Upload &amp; Review
+      </button>
+      <button
+        type="button"
+        class="btn btn-sm rounded-2 px-3 fw-semibold transition-all d-flex align-items-center gap-2"
+        [class.btn-orange]="activeTab === 'history'"
+        [class.btn-light]="activeTab !== 'history'"
+        (click)="setTab('history')"
+      >
+        <span>📜 Upload History</span>
+        @if (historyTotal > 0) {
+          <span class="badge bg-dark-subtle text-dark rounded-pill px-2 py-0" style="font-size: 11px;">
+            {{ historyTotal }}
+          </span>
+        }
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- TAB 1: UPLOAD & REVIEW WORKSPACE                              -->
+  <!-- ============================================================= -->
+  @if (activeTab === 'upload') {
+
+    <!-- STATE 1: NO FILE LOADED -> DRAG & DROP ZONE -->
+    @if (!currentDocument && !uploading) {
+      <div class="card border-0 shadow-sm p-4 p-md-5 text-center upload-card mb-4">
+        <input
+          #fileInput
+          type="file"
+          class="d-none"
+          accept="application/pdf,.pdf"
+          (change)="onFileChange($event)"
+        />
+
+        <div
+          class="drop-zone p-5 rounded-4 d-flex flex-column align-items-center justify-content-center cursor-pointer transition-all"
+          [class.drag-over]="isDragging"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave($event)"
+          (drop)="onDrop($event)"
+          (click)="triggerBrowse()"
+        >
+          <div class="upload-icon-circle mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="currentColor" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M8 0a5.53 5.53 0 0 0-3.594 1.342c-.766.66-1.321 1.52-1.464 2.383C1.266 4.095 0 5.555 0 7.318 0 9.366 1.708 11 3.781 11H7.5V5.707L5.354 7.854a.5.5 0 1 1-.708-.708l3-3a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 5.707V11h4.188C14.502 11 16 9.57 16 7.773c0-1.636-1.242-2.969-2.834-3.194C12.923 1.999 10.69 0 8 0m-.5 14.5V11h1v3.5a.5.5 0 0 1-1 0"/>
+            </svg>
+          </div>
+          <h4 class="fw-bold text-dark mb-1">Drag and drop your PDF document here</h4>
+          <p class="text-muted small mb-3">Supports native PDF invoices, tax receipts, and purchase orders</p>
+          <button type="button" class="btn btn-orange px-4 py-2 fw-semibold shadow-sm rounded-3">
+            📂 Browse Files from Device
+          </button>
+          <div class="text-muted small mt-3">
+            <span class="badge bg-light text-muted border px-2 py-1">Max File Size: 20 MB</span>
+            <span class="ms-2 badge bg-light text-muted border px-2 py-1">Format: .pdf</span>
+          </div>
+        </div>
+
+        <!-- Capability Highlights -->
+        <div class="row g-3 mt-4 text-start">
+          <div class="col-md-4">
+            <div class="p-3 bg-light rounded-3 border-start border-4 border-warning h-100">
+              <div class="fw-bold text-dark small mb-1">⚡ Automatic Extraction</div>
+              <div class="text-muted" style="font-size: 12px;">
+                Extracts invoice number, dates, customer names, line items, taxes, discounts, and totals using fast local PDF parsing.
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="p-3 bg-light rounded-3 border-start border-4 border-success h-100">
+              <div class="fw-bold text-dark small mb-1">🎯 Smart Database Matching</div>
+              <div class="text-muted" style="font-size: 12px;">
+                Matches extracted customer profiles and inventory items against your existing database to prevent duplicate entries.
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="p-3 bg-light rounded-3 border-start border-4 border-primary h-100">
+              <div class="fw-bold text-dark small mb-1">📝 Editable Review &amp; Drafts</div>
+              <div class="text-muted" style="font-size: 12px;">
+                Full split-screen editable review before invoice creation. Automatically generates draft invoices with calculation checks.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- STATE 2: UPLOAD & EXTRACTION PROGRESS -->
+    @if (uploading) {
+      <div class="card border-0 shadow-sm p-5 text-center upload-card mb-4">
+        <div class="spinner-grow text-warning mb-3" style="width: 3.5rem; height: 3.5rem;" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <h4 class="fw-bold text-dark mb-1">
+          @if (processingStep === 'uploading') { Uploading Document... }
+          @if (processingStep === 'reading') { Reading PDF Document... }
+          @if (processingStep === 'extracting') { Extracting Fields &amp; Matching Database... }
+        </h4>
+        <p class="text-muted small mb-3">
+          Processing <strong>{{ selectedFile?.name }}</strong> ({{ formatFileSize(selectedFile?.size || 0) }})
+        </p>
+
+        <!-- Stepper Progress Bar -->
+        <div class="stepper-pipeline mx-auto my-3" style="max-width: 500px;">
+          <div class="d-flex justify-content-between text-muted small fw-semibold mb-2">
+            <span [class.text-warning]="processingStep === 'uploading'" [class.text-success]="processingStep !== 'uploading'">
+              1. Upload
+            </span>
+            <span [class.text-warning]="processingStep === 'reading'" [class.text-success]="processingStep === 'extracting' || processingStep === 'ready'">
+              2. Read PDF
+            </span>
+            <span [class.text-warning]="processingStep === 'extracting'" [class.text-success]="processingStep === 'ready'">
+              3. Extract &amp; Match
+            </span>
+            <span>4. Review</span>
+          </div>
+          <div class="progress" style="height: 6px;">
+            <div
+              class="progress-bar progress-bar-striped progress-bar-animated bg-warning"
+              role="progressbar"
+              [style.width]="processingStep === 'uploading' ? '30%' : (processingStep === 'reading' ? '65%' : '90%')"
+            ></div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- STATE 3: REVIEW & EDIT SCREEN (SPLIT VIEW) -->
+    @if (currentDocument) {
+      <div class="review-workspace mb-4">
+        <!-- Review Action Bar -->
+        <div class="card border-0 shadow-sm p-3 mb-3 bg-white">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+              <span class="fs-4">📄</span>
+              <div>
+                <h5 class="fw-bold text-dark mb-0">{{ currentDocument.original_name }}</h5>
+                <div class="d-flex align-items-center gap-2 small text-muted">
+                  <span>{{ formatFileSize(currentDocument.file_size) }}</span>
+                  <span>•</span>
+                  <span>{{ formatDate(currentDocument.created_at) }}</span>
+                  <span>•</span>
+                  <span class="badge" [ngClass]="getDocumentStatusBadgeClass(currentDocument.status)">
+                    {{ currentDocument.status }}
+                  </span>
+                  @if (currentDocument.extracted_data?.validation?.confidence) {
+                    <span
+                      class="badge"
+                      [class.bg-success-subtle]="currentDocument.extracted_data?.validation?.confidence === 'high'"
+                      [class.text-success]="currentDocument.extracted_data?.validation?.confidence === 'high'"
+                      [class.bg-warning-subtle]="currentDocument.extracted_data?.validation?.confidence === 'medium'"
+                      [class.text-dark]="currentDocument.extracted_data?.validation?.confidence === 'medium'"
+                      [class.bg-danger-subtle]="currentDocument.extracted_data?.validation?.confidence === 'low'"
+                      [class.text-danger]="currentDocument.extracted_data?.validation?.confidence === 'low'"
+                    >
+                      Confidence: {{ currentDocument.extracted_data?.validation?.confidence | uppercase }}
+                    </span>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="clearSelectedFile()">
+                ✕ Close / Upload Another
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary"
+                [disabled]="retrying"
+                (click)="retryCurrentDocument()"
+              >
+                @if (retrying) {
+                  <span class="spinner-border spinner-border-sm me-1"></span>
+                  Re-parsing...
+                } @else {
+                  🔄 Retry Extraction
+                }
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-success"
+                [disabled]="savingEdits"
+                (click)="saveEdits()"
+              >
+                @if (savingEdits) {
+                  <span class="spinner-border spinner-border-sm me-1"></span>
+                  Saving...
+                } @else {
+                  💾 Save Edits
+                }
+              </button>
+              <button
+                type="button"
+                class="btn btn-orange btn-sm px-3 fw-bold d-flex align-items-center gap-2 shadow-sm"
+                [disabled]="generatingDraft"
+                (click)="generateDraftInvoice()"
+              >
+                @if (generatingDraft) {
+                  <span class="spinner-border spinner-border-sm"></span>
+                  Generating Draft...
+                } @else {
+                  <span>⚡ Generate Draft Invoice</span>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Discrepancy / Math Validation Banners -->
+        @if (currentDocument.extracted_data?.validation?.calculation_errors?.length) {
+          <div class="alert alert-warning border-0 shadow-sm d-flex align-items-start gap-2 mb-3">
+            <span class="fs-5">⚠️</span>
+            <div>
+              <div class="fw-bold">Calculation Discrepancy Detected in Extracted Document:</div>
+              <ul class="mb-0 ps-3 small">
+                @for (err of currentDocument.extracted_data?.validation?.calculation_errors; track err) {
+                  <li>{{ err }}</li>
+                }
+              </ul>
+              <div class="small text-muted mt-1">
+                Please verify unit rates and quantities in the review table below before generating the draft.
+              </div>
+            </div>
+          </div>
+        }
+
+        @if (currentDocument.extracted_data?.validation?.missing_fields?.length) {
+          <div class="alert alert-info border-0 shadow-sm d-flex align-items-center gap-2 mb-3 py-2">
+            <span>ℹ️</span>
+            <span class="small">
+              <strong>Missing values:</strong> {{ currentDocument.extracted_data?.validation?.missing_fields?.join(', ') }}.
+              Please fill them in below.
+            </span>
+          </div>
+        }
+
+        <!-- Split Panes: Original PDF Preview (Left) & Extracted Review Form (Right) -->
+        <div class="row g-3">
+          <!-- LEFT PANE: PDF DOCUMENT PREVIEW -->
+          <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100 d-flex flex-column">
+              <div class="card-header bg-white border-bottom py-2 d-flex justify-content-between align-items-center">
+                <span class="fw-bold text-dark small d-flex align-items-center gap-1">
+                  <span>📑</span> Original PDF Document
+                </span>
+                <div class="d-flex gap-2">
+                  <button type="button" class="btn btn-xs btn-outline-secondary py-1 px-2" (click)="downloadOriginalDocument()" title="Download PDF">
+                    ⬇️ Download
+                  </button>
+                </div>
+              </div>
+              <div class="card-body p-0 flex-grow-1" style="min-height: 720px; background-color: #525659;">
+                @if (safePreviewUrl) {
+                  <iframe
+                    [src]="safePreviewUrl"
+                    class="w-100 h-100 border-0"
+                    style="min-height: 720px;"
+                    title="PDF Document Preview"
+                  ></iframe>
+                } @else {
+                  <div class="d-flex align-items-center justify-content-center h-100 text-white-50">
+                    PDF preview not available.
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT PANE: EDITABLE EXTRACTED DATA FORM -->
+          <div class="col-lg-6">
+            <div class="d-flex flex-column gap-3">
+
+              <!-- SECTION 1: CUSTOMER INFORMATION & MATCHING -->
+              <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-2 d-flex justify-content-between align-items-center">
+                  <span class="fw-bold text-dark small d-flex align-items-center gap-1">
+                    <span>👥</span> 1. Customer Information
+                  </span>
+                  <!-- Matching Mode Pill -->
+                  <div class="btn-group btn-group-sm">
+                    @if (matchedCustomerInfo) {
+                      <button
+                        type="button"
+                        class="btn btn-xs fw-semibold"
+                        [class.btn-success]="customerMatchMode === 'matched'"
+                        [class.btn-outline-secondary]="customerMatchMode !== 'matched'"
+                        (click)="customerMatchMode = 'matched'"
+                      >
+                        ✓ Matched
+                      </button>
+                    }
+                    <button
+                      type="button"
+                      class="btn btn-xs fw-semibold"
+                      [class.btn-primary]="customerMatchMode === 'existing'"
+                      [class.btn-outline-secondary]="customerMatchMode !== 'existing'"
+                      (click)="customerMatchMode = 'existing'"
+                    >
+                      Select Existing
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-xs fw-semibold"
+                      [class.btn-warning]="customerMatchMode === 'new'"
+                      [class.btn-outline-secondary]="customerMatchMode !== 'new'"
+                      (click)="customerMatchMode = 'new'"
+                    >
+                      + Create New
+                    </button>
+                  </div>
+                </div>
+
+                <div class="card-body p-3">
+                  <!-- Match Alert Banner -->
+                  @if (matchedCustomerInfo && customerMatchMode === 'matched') {
+                    <div class="p-2 mb-3 bg-success-subtle border border-success-subtle rounded-3 d-flex justify-content-between align-items-center small">
+                      <div>
+                        <span class="fw-bold text-success">✓ Matched Existing Customer:</span>
+                        <strong> {{ matchedCustomerInfo.name }}</strong>
+                        @if (matchedCustomerInfo.company_name) { ({{ matchedCustomerInfo.company_name }}) }
+                        <span class="text-muted ms-1">({{ matchedCustomerInfo.confidence }}% match via {{ matchedCustomerInfo.match_type }})</span>
+                      </div>
+                      <button type="button" class="btn btn-xs btn-outline-success py-0" (click)="customerMatchMode = 'existing'">
+                        Change
+                      </button>
+                    </div>
+                  } @else if (!matchedCustomerInfo && customerMatchMode !== 'existing') {
+                    <div class="p-2 mb-3 bg-warning-subtle border border-warning-subtle rounded-3 small text-dark d-flex justify-content-between align-items-center">
+                      <div>
+                        <strong>⚠️ No matching customer found in database.</strong>
+                        Will create as a new customer upon generating draft invoice.
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Select Existing Dropdown if in 'existing' mode -->
+                  @if (customerMatchMode === 'existing') {
+                    <div class="mb-3">
+                      <label class="form-label small fw-bold text-dark">Select Existing Customer</label>
+                      <select
+                        class="form-select form-select-sm"
+                        [ngModel]="selectedCustomerId"
+                        (ngModelChange)="onExistingCustomerSelect($event)"
+                      >
+                        <option [ngValue]="null">-- Choose from Database --</option>
+                        @for (c of existingCustomers; track c.id) {
+                          <option [ngValue]="c.id">
+                            {{ c.first_name }} {{ c.last_name }} @if (c.company_name) { ({{ c.company_name }}) } - {{ c.city }}
+                          </option>
+                        }
+                      </select>
+                    </div>
+                  }
+
+                  <!-- Editable Fields -->
+                  <div class="row g-2">
+                    <div class="col-md-6">
+                      <label class="form-label small text-muted mb-1">First Name <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control form-control-sm" [(ngModel)]="reviewCustomer.first_name">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small text-muted mb-1">Last Name</label>
+                      <input type="text" class="form-control form-control-sm" [(ngModel)]="reviewCustomer.last_name">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small text-muted mb-1">Company Name</label>
+                      <input type="text" class="form-control form-control-sm" [(ngModel)]="reviewCustomer.company_name">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small text-muted mb-1">Email Address</label>
+                      <input type="email" class="form-control form-control-sm" [(ngModel)]="reviewCustomer.email">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small text-muted mb-1">Phone Number</label>
+                      <input type="text" class="form-control form-control-sm" [(ngModel)]="reviewCustomer.phone">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small text-muted mb-1">City</label>
+                      <input type="text" class="form-control form-control-sm" [(ngModel)]="reviewCustomer.city">
+                    </div>
+                    <div class="col-12">
+                      <label class="form-label small text-muted mb-1">Billing Address</label>
+                      <input type="text" class="form-control form-control-sm" [(ngModel)]="reviewCustomer.address_line1" placeholder="Street / Suite / Building">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SECTION 2: INVOICE DETAILS -->
+              <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-2">
+                  <span class="fw-bold text-dark small d-flex align-items-center gap-1">
+                    <span>📋</span> 2. Invoice Details
+                  </span>
+                </div>
+                <div class="card-body p-3">
+                  <div class="row g-2">
+                    <div class="col-md-4">
+                      <label class="form-label small text-muted mb-1">Document / Ref #</label>
+                      <input type="text" class="form-control form-control-sm" [(ngModel)]="reviewInvoice.document_number">
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label small text-muted mb-1">Invoice Date <span class="text-danger">*</span></label>
+                      <input type="date" class="form-control form-control-sm" [(ngModel)]="reviewInvoice.invoice_date">
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label small text-muted mb-1">Due Date <span class="text-danger">*</span></label>
+                      <input type="date" class="form-control form-control-sm" [(ngModel)]="reviewInvoice.due_date">
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label small text-muted mb-1">Payment Terms</label>
+                      <input type="text" class="form-control form-control-sm" [(ngModel)]="reviewInvoice.payment_terms">
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label small text-muted mb-1">Payment Method</label>
+                      <select class="form-select form-select-sm" [(ngModel)]="reviewCustomer.payment_method">
+                        <option value="Daily Pay">Daily Pay</option>
+                        <option value="15 Days Pay">15 Days Pay</option>
+                        <option value="Monthly Pay">Monthly Pay</option>
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label small text-muted mb-1">Currency</label>
+                      <input type="text" class="form-control form-control-sm" [(ngModel)]="reviewInvoice.currency">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SECTION 3: EXTRACTED LINE ITEMS TABLE -->
+              <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-2 d-flex justify-content-between align-items-center">
+                  <span class="fw-bold text-dark small d-flex align-items-center gap-1">
+                    <span>📦</span> 3. Extracted Items ({{ reviewItems.length }})
+                  </span>
+                  <button type="button" class="btn btn-xs btn-outline-warning text-dark fw-bold py-1 px-2" (click)="addItemRow()">
+                    + Add Item
+                  </button>
+                </div>
+                <div class="card-body p-0 table-responsive">
+                  <table class="table table-sm table-bordered align-middle mb-0" style="font-size: 12px;">
+                    <thead class="table-light">
+                      <tr>
+                        <th style="width: 35%;">Item / Match</th>
+                        <th style="width: 12%;">Qty</th>
+                        <th style="width: 18%;">Unit Price</th>
+                        <th style="width: 12%;">GST %</th>
+                        <th style="width: 18%;">Amount</th>
+                        <th style="width: 5%;"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of reviewItems; track $index) {
+                        <tr>
+                          <!-- Item Name & Database Match Dropdown -->
+                          <td>
+                            <input
+                              type="text"
+                              class="form-control form-control-sm mb-1 fw-semibold"
+                              [(ngModel)]="item.item_name"
+                              placeholder="Item description"
+                            >
+                            <div class="d-flex align-items-center gap-1">
+                              @if (item.is_matched) {
+                                <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 10px;">
+                                  ✓ Matched
+                                </span>
+                              } @else {
+                                <span class="badge bg-warning-subtle text-dark border border-warning-subtle" style="font-size: 10px;">
+                                  Unmatched
+                                </span>
+                              }
+                              <select
+                                class="form-select form-select-sm py-0"
+                                style="font-size: 11px;"
+                                [ngModel]="item.matched_item_id"
+                                (ngModelChange)="onItemMatchSelect(item, $event)"
+                              >
+                                <option [ngValue]="null">-- Match Existing Item --</option>
+                                @for (dbItem of existingItems; track dbItem.id) {
+                                  <option [ngValue]="dbItem.id">{{ dbItem.item_name }} (₹{{ dbItem.item_cost }})</option>
+                                }
+                              </select>
+                            </div>
+                          </td>
+
+                          <!-- Qty -->
+                          <td>
+                            <input
+                              type="number"
+                              min="1"
+                              step="1"
+                              class="form-control form-control-sm text-end"
+                              [(ngModel)]="item.quantity"
+                              (ngModelChange)="onItemPriceOrQtyChange(item)"
+                            >
+                          </td>
+
+                          <!-- Unit Price -->
+                          <td>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              class="form-control form-control-sm text-end"
+                              [(ngModel)]="item.unit_price"
+                              (ngModelChange)="onItemPriceOrQtyChange(item)"
+                            >
+                          </td>
+
+                          <!-- GST % -->
+                          <td>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.5"
+                              class="form-control form-control-sm text-end"
+                              [(ngModel)]="item.gst_percentage"
+                              (ngModelChange)="recalculateTotals()"
+                            >
+                          </td>
+
+                          <!-- Line Total Amount -->
+                          <td class="text-end fw-bold">
+                            ₹{{ item.amount | number:'1.2-2' }}
+                          </td>
+
+                          <!-- Delete -->
+                          <td class="text-center">
+                            <button
+                              type="button"
+                              class="btn btn-xs btn-outline-danger p-1 border-0"
+                              (click)="removeItemRow($index)"
+                              title="Delete Item"
+                            >
+                              🗑️
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                      @if (reviewItems.length === 0) {
+                        <tr>
+                          <td colspan="6" class="text-center py-3 text-muted">
+                            No items extracted. Click "+ Add Item" to add invoice line items.
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- SECTION 4: FINANCIAL TOTALS -->
+              <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body p-3">
+                  <div class="row align-items-center">
+                    <div class="col-md-6">
+                      <div class="d-flex justify-content-between py-1 small">
+                        <span class="text-muted">Subtotal:</span>
+                        <span class="fw-semibold">₹{{ reviewTotals.subtotal | number:'1.2-2' }}</span>
+                      </div>
+                      <div class="d-flex justify-content-between py-1 small">
+                        <span class="text-muted">Total GST:</span>
+                        <span class="fw-semibold text-danger">+ ₹{{ reviewTotals.total_gst | number:'1.2-2' }}</span>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="d-flex justify-content-between align-items-center py-1 small">
+                        <span class="text-muted">Discount (-):</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          class="form-control form-control-sm text-end w-50 py-0"
+                          [(ngModel)]="reviewTotals.discount"
+                          (ngModelChange)="recalculateTotals()"
+                        >
+                      </div>
+                      <div class="d-flex justify-content-between align-items-center py-1 small">
+                        <span class="text-muted">Additional Charges (+):</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          class="form-control form-control-sm text-end w-50 py-0"
+                          [(ngModel)]="reviewTotals.additional_charges"
+                          (ngModelChange)="recalculateTotals()"
+                        >
+                      </div>
+                    </div>
+                    <div class="col-12 mt-2 pt-2 border-top d-flex justify-content-between align-items-center">
+                      <span class="fw-bold text-dark fs-6">Grand Total:</span>
+                      <span class="fw-bold fs-5 text-orange">₹{{ reviewTotals.grand_total | number:'1.2-2' }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SECTION 5: NOTES -->
+              <div class="card border-0 shadow-sm">
+                <div class="card-body p-3">
+                  <label class="form-label small text-muted mb-1">Notes / Remarks</label>
+                  <textarea
+                    rows="2"
+                    class="form-control form-control-sm"
+                    [(ngModel)]="reviewInvoice.notes"
+                    placeholder="Extracted remarks or notes"
+                  ></textarea>
+                </div>
+              </div>
+
+              <!-- FINAL GENERATE DRAFT BUTTON -->
+              <div class="p-3 bg-white border rounded-3 shadow-sm d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="fw-bold text-dark">Ready to generate invoice?</div>
+                  <div class="text-muted small">Will create a Draft Invoice with existing sequence format.</div>
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-orange px-4 py-2 fw-bold d-flex align-items-center gap-2 shadow-sm"
+                  [disabled]="generatingDraft"
+                  (click)="generateDraftInvoice()"
+                >
+                  @if (generatingDraft) {
+                    <span class="spinner-border spinner-border-sm"></span>
+                    Generating Draft...
+                  } @else {
+                    <span>⚡ Generate Draft Invoice →</span>
+                  }
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+  }
+
+  <!-- ============================================================= -->
+  <!-- TAB 2: UPLOAD HISTORY                                         -->
+  <!-- ============================================================= -->
+  @if (activeTab === 'history') {
+    <div class="card border-0 shadow-sm p-4">
+      <!-- Search & Filter Controls -->
+      <div class="row g-2 mb-3">
+        <div class="col-md-5">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white border-end-0">🔍</span>
+            <input
+              type="text"
+              class="form-control border-start-0"
+              placeholder="Search by file name, invoice #, customer..."
+              [(ngModel)]="historySearch"
+              (keyup.enter)="loadHistory(1)"
+            />
+          </div>
+        </div>
+        <div class="col-md-4">
+          <select
+            class="form-select form-select-sm"
+            [(ngModel)]="historyStatus"
+            (change)="loadHistory(1)"
+          >
+            <option value="">All Processing Statuses</option>
+            <option value="Review Required">Review Required</option>
+            <option value="Draft Created">Draft Created</option>
+            <option value="Uploaded">Uploaded</option>
+            <option value="Failed">Failed</option>
+          </select>
+        </div>
+        <div class="col-md-3 text-md-end">
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="loadHistory(historyPage)">
+            🔄 Refresh
+          </button>
+        </div>
+      </div>
+
+      <!-- History Table -->
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
+          <thead class="table-light">
+            <tr>
+              <th>Document Name</th>
+              <th>Upload Date / Time</th>
+              <th>Extracted Customer</th>
+              <th>Doc / Inv #</th>
+              <th class="text-end">Amount</th>
+              <th>Status</th>
+              <th>Generated Invoice</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (doc of historyList; track doc.id) {
+              <tr>
+                <!-- Document Name -->
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="fs-5">📄</span>
+                    <div>
+                      <div class="fw-bold text-dark text-truncate" style="max-width: 200px;" [title]="doc.original_name">
+                        {{ doc.original_name }}
+                      </div>
+                      <span class="text-muted small">{{ formatFileSize(doc.file_size) }}</span>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Upload Date -->
+                <td>
+                  <div>{{ formatDate(doc.created_at) }}</div>
+                  <div class="text-muted small">{{ doc.created_at | date:'shortTime' }}</div>
+                </td>
+
+                <!-- Customer -->
+                <td>
+                  @if (doc.extracted_data?.customer?.company_name || doc.extracted_data?.customer?.first_name) {
+                    <div class="fw-semibold text-dark">
+                      {{ doc.extracted_data?.customer?.company_name || (doc.extracted_data?.customer?.first_name + ' ' + (doc.extracted_data?.customer?.last_name || '')) }}
+                    </div>
+                    @if (doc.extracted_data?.customer?.email) {
+                      <div class="text-muted small">{{ doc.extracted_data?.customer?.email }}</div>
+                    }
+                  } @else {
+                    <span class="text-muted">-</span>
+                  }
+                </td>
+
+                <!-- Extracted Doc Number -->
+                <td>
+                  <code>{{ doc.extracted_data?.invoice?.document_number || '-' }}</code>
+                </td>
+
+                <!-- Amount -->
+                <td class="text-end fw-bold">
+                  @if (doc.extracted_data?.totals?.grand_total) {
+                    ₹{{ doc.extracted_data?.totals?.grand_total | number:'1.2-2' }}
+                  } @else {
+                    <span class="text-muted">-</span>
+                  }
+                </td>
+
+                <!-- Status -->
+                <td>
+                  <span class="badge" [ngClass]="getDocumentStatusBadgeClass(doc.status)">
+                    {{ doc.status }}
+                  </span>
+                </td>
+
+                <!-- Generated Invoice -->
+                <td>
+                  @if (doc.invoice) {
+                    <a [routerLink]="['/invoices', doc.invoice.id]" class="fw-bold text-orange text-decoration-none">
+                      #{{ doc.invoice.invoice_number }}
+                    </a>
+                    <span class="badge ms-1" [ngClass]="getStatusBadgeClass(doc.invoice.status)" style="font-size: 10px;">
+                      {{ doc.invoice.status }}
+                    </span>
+                  } @else {
+                    <span class="text-muted small">Not Created</span>
+                  }
+                </td>
+
+                <!-- Actions -->
+                <td class="text-end">
+                  <div class="btn-group btn-group-sm">
+                    <button
+                      type="button"
+                      class="btn btn-outline-warning text-dark fw-bold px-2"
+                      (click)="openReviewFromHistory(doc)"
+                      title="Review Extracted Data"
+                    >
+                      ✏️ Review
+                    </button>
+                    @if (doc.invoice) {
+                      <a
+                        [routerLink]="['/invoices', doc.invoice.id]"
+                        class="btn btn-outline-primary px-2"
+                        title="Open Invoice"
+                      >
+                        👁️
+                      </a>
+                    }
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger px-2"
+                      (click)="deleteDocumentFromHistory(doc)"
+                      title="Delete Document"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+
+            @if (!historyLoading && historyList.length === 0) {
+              <tr>
+                <td colspan="8" class="text-center py-5 text-muted">
+                  <div class="fs-2 mb-2">📂</div>
+                  <div class="fw-bold">No uploaded documents found</div>
+                  <div class="small">Upload a PDF invoice in the Upload &amp; Review tab to get started.</div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      @if (historyLastPage > 1) {
+        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+          <span class="small text-muted">
+            Showing {{ historyList.length }} of {{ historyTotal }} documents
+          </span>
+          <div class="btn-group btn-group-sm">
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              [disabled]="historyPage <= 1"
+              (click)="loadHistory(historyPage - 1)"
+            >
+              Previous
+            </button>
+            <span class="btn btn-light disabled">
+              Page {{ historyPage }} of {{ historyLastPage }}
+            </span>
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              [disabled]="historyPage >= historyLastPage"
+              (click)="loadHistory(historyPage + 1)"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ============================================================= -->
+  <!-- MODAL 1: DUPLICATE WARNING MODAL                              -->
+  <!-- ============================================================= -->
+  @if (duplicateWarningOpen) {
+    <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+          <div class="modal-header bg-warning-subtle text-dark border-0 py-3">
+            <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
+              <span>⚠️</span> Potential Duplicate Document
+            </h5>
+            <button type="button" class="btn-close" (click)="duplicateWarningOpen = false"></button>
+          </div>
+          <div class="modal-body p-4">
+            <p class="text-dark mb-3">
+              This exact PDF document has already been processed in the system.
+            </p>
+            <div class="p-3 bg-light rounded-3 border small mb-3">
+              <div><strong>Original File:</strong> {{ duplicateData?.existing_upload?.original_name }}</div>
+              <div><strong>Uploaded on:</strong> {{ formatDate(duplicateData?.existing_upload?.created_at) }}</div>
+              @if (duplicateData?.existing_upload?.invoice) {
+                <div class="mt-2 text-danger fw-bold">
+                  Existing Invoice: #{{ duplicateData?.existing_upload?.invoice?.invoice_number }} ({{ duplicateData?.existing_upload?.invoice?.status }})
+                </div>
+              }
+            </div>
+            <p class="text-muted small mb-0">
+              Generating another invoice from the exact same file may create an unintended duplicate in your accounts.
+            </p>
+          </div>
+          <div class="modal-footer border-0 bg-light py-3">
+            <button type="button" class="btn btn-secondary btn-sm" (click)="duplicateWarningOpen = false">
+              Cancel
+            </button>
+            @if (duplicateData?.existing_upload?.invoice) {
+              <a
+                [routerLink]="['/invoices', duplicateData?.existing_upload?.invoice?.id]"
+                class="btn btn-primary btn-sm"
+                (click)="duplicateWarningOpen = false"
+              >
+                View Existing Invoice
+              </a>
+            }
+            <button type="button" class="btn btn-warning btn-sm fw-bold text-dark" (click)="proceedDuplicateUpload()">
+              Process Document Anyway
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ============================================================= -->
+  <!-- MODAL 2: DRAFT INVOICE CREATED SUCCESS & ACTIONS (REQ 8)      -->
+  <!-- ============================================================= -->
+  @if (successModalOpen && createdInvoice) {
+    <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.6);">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+          <div class="modal-header bg-success text-white py-3">
+            <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
+              <span>🎉</span> Draft Invoice Created Successfully!
+            </h5>
+            <button type="button" class="btn-close btn-close-white" (click)="successModalOpen = false"></button>
+          </div>
+          <div class="modal-body p-4">
+            <!-- Invoice Snapshot Details -->
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border">
+                  <div class="text-muted small mb-1">Invoice Number:</div>
+                  <div class="fs-4 fw-bold text-orange">#{{ createdInvoice.invoice_number }}</div>
+                  <div class="mt-2 text-muted small">
+                    Status: <span class="badge bg-secondary">{{ createdInvoice.status }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border">
+                  <div class="text-muted small mb-1">Billed To:</div>
+                  <div class="fw-bold text-dark fs-6">{{ createdInvoice.customer_name }}</div>
+                  @if (createdInvoice.company_name) {
+                    <div class="text-muted small">{{ createdInvoice.company_name }}</div>
+                  }
+                  <div class="mt-2 fs-5 fw-bold text-dark">
+                    Total: ₹{{ createdInvoice.grand_total | number:'1.2-2' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <h6 class="fw-bold text-dark mb-3">Available Actions:</h6>
+            <!-- 7 Standard Actions per Requirement 8 -->
+            <div class="row g-2">
+              <div class="col-md-6">
+                <button
+                  type="button"
+                  class="btn btn-outline-primary w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2"
+                  (click)="openViewDraft()"
+                >
+                  👁️ View Draft Invoice
+                </button>
+              </div>
+              <div class="col-md-6">
+                <button
+                  type="button"
+                  class="btn btn-outline-warning text-dark w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2"
+                  (click)="openEditDraft()"
+                >
+                  ✏️ Edit Draft
+                </button>
+              </div>
+              <div class="col-md-6">
+                <button
+                  type="button"
+                  class="btn btn-outline-dark w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2"
+                  (click)="downloadInvoicePdf()"
+                >
+                  📄 Generate PDF Invoice
+                </button>
+              </div>
+              <div class="col-md-6">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2"
+                  (click)="downloadOriginalDocument()"
+                >
+                  📥 View Original Uploaded Document
+                </button>
+              </div>
+              <div class="col-md-6">
+                <button
+                  type="button"
+                  class="btn btn-success w-100 py-2 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm"
+                  [disabled]="createdInvoice.status === 'Generated'"
+                  (click)="openFinalizeConfirm()"
+                >
+                  ✅ Finalize Invoice
+                </button>
+              </div>
+              <div class="col-md-6">
+                <button
+                  type="button"
+                  class="btn btn-outline-danger w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2"
+                  (click)="deleteConfirmModalOpen = true"
+                >
+                  🗑️ Delete Draft
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer border-0 bg-light py-2">
+            <button type="button" class="btn btn-secondary btn-sm" (click)="successModalOpen = false">
+              Done / Return to Workspace
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ============================================================= -->
+  <!-- MODAL 3: FINALIZE CONFIRMATION MODAL                          -->
+  <!-- ============================================================= -->
+  @if (finalizeConfirmModalOpen && createdInvoice) {
+    <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.65);">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+          <div class="modal-header bg-dark text-white py-3">
+            <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
+              <span>⚠️</span> Confirm Finalize Invoice
+            </h5>
+            <button type="button" class="btn-close btn-close-white" (click)="finalizeConfirmModalOpen = false"></button>
+          </div>
+          <div class="modal-body p-4 text-center">
+            <div class="fs-1 text-warning mb-2">⚡</div>
+            <h5 class="fw-bold text-dark mb-2">Finalize Invoice #{{ createdInvoice.invoice_number }}?</h5>
+            <p class="text-muted small mb-0">
+              This action transitions the invoice status from <strong>DRAFT</strong> to <strong>GENERATED</strong>, making it official for accounting and customer dispatch.
+            </p>
+          </div>
+          <div class="modal-footer border-0 bg-light py-3">
+            <button type="button" class="btn btn-secondary btn-sm" (click)="finalizeConfirmModalOpen = false">
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="btn btn-success btn-sm fw-bold px-3"
+              [disabled]="finalizing"
+              (click)="confirmFinalizeInvoice()"
+            >
+              @if (finalizing) {
+                <span class="spinner-border spinner-border-sm me-1"></span>
+                Finalizing...
+              } @else {
+                Yes, Finalize Invoice
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ============================================================= -->
+  <!-- MODAL 4: DELETE DRAFT CONFIRMATION                            -->
+  <!-- ============================================================= -->
+  @if (deleteConfirmModalOpen && createdInvoice) {
+    <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.65);">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+          <div class="modal-header bg-danger text-white py-3">
+            <h5 class="modal-title fw-bold">Delete Draft Invoice?</h5>
+            <button type="button" class="btn-close btn-close-white" (click)="deleteConfirmModalOpen = false"></button>
+          </div>
+          <div class="modal-body p-4 text-center">
+            <p class="text-dark mb-0">
+              Are you sure you want to permanently delete draft invoice <strong>#{{ createdInvoice.invoice_number }}</strong>?
+            </p>
+          </div>
+          <div class="modal-footer border-0 bg-light py-3">
+            <button type="button" class="btn btn-secondary btn-sm" (click)="deleteConfirmModalOpen = false">
+              Cancel
+            </button>
+            <button type="button" class="btn btn-danger btn-sm fw-bold" (click)="confirmDeleteDraft()">
+              Yes, Delete Draft
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>

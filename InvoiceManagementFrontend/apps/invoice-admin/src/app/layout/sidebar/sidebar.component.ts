@@ -199,6 +199,7 @@ export class SidebarComponent {
     { title: 'Dashboard', route: '/dashboard', icon: '📊', permission: 'dashboard' },
     { title: 'Customers', route: '/customers', icon: '👥', permission: 'customers' },
     { title: 'Items', route: '/items', icon: '📦', permission: 'items' },
+    { title: 'Upload Document', route: '/upload-document', icon: '📤', permission: 'upload_document' },
     { title: 'Invoice Generate', route: '/invoices/generate', icon: '📄', permission: 'invoice_generate' },
     { title: 'Invoices List', route: '/invoices', icon: '📑', permission: 'invoices' },
     { title: 'Reports', route: '/reports', icon: '📈', permission: 'reports' },

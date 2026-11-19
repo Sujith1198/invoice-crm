@@ -13,6 +13,7 @@ class Invoice extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'document_upload_id',
         'invoice_number',
         'invoice_date',
         'due_date',
@@ -51,6 +52,11 @@ class Invoice extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function documentUpload(): BelongsTo
+    {
+        return $this->belongsTo(DocumentUpload::class, 'document_upload_id');
     }
 
     public function items(): HasMany

@@ -76,4 +76,22 @@ export function getRoleBadgeClass(role: string): string {
   }
 }
 
+export function getDocumentStatusBadgeClass(status: string): string {
+  switch (status) {
+    case 'Draft Created':
+      return 'bg-success-subtle text-success border border-success-subtle';
+    case 'Review Required':
+      return 'bg-warning-subtle text-dark border border-warning-subtle';
+    case 'Reading PDF':
+    case 'Extracting Information':
+    case 'Uploaded':
+      return 'bg-info-subtle text-info-emphasis border border-info-subtle';
+    case 'Failed':
+      return 'bg-danger-subtle text-danger border border-danger-subtle';
+    default:
+      return 'bg-secondary-subtle text-secondary border border-secondary-subtle';
+  }
+}
+
+
 
