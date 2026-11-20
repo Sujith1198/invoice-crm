@@ -3,7 +3,7 @@
   <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
       <h4 class="fw-bold text-dark mb-1">Financial, GST & Operational Reports</h4>
-      <p class="text-muted small mb-0">Generate, analyze, and export comprehensive sales and taxation statements</p>
+      <p class="text-muted small mb-0">Generate, analyze, and export comprehensive sales and taxation statements with complete totals</p>
     </div>
     <div class="d-flex gap-2">
       <button class="btn btn-sm btn-light border" (click)="printReport()">
@@ -110,44 +110,128 @@
 
   <!-- Financial Metric Summaries for this Report -->
   @if (summary) {
-    <div class="row g-3 mb-4">
-      <div class="col-6 col-md-4 col-xl-2">
-        <div class="card border-0 shadow-sm p-3">
-          <span class="text-muted small">Invoices</span>
-          <h5 class="fw-bold text-dark mb-0 mt-1">{{ summary.total_invoices || 0 }}</h5>
+    <!-- Case 1: Revenue Report Metric Ribbon -->
+    @if (activeReport === 'revenue') {
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-6 col-xl-6">
+          <div class="card border-0 shadow-sm p-3 border-start border-4 border-warning">
+            <span class="text-muted small fw-semibold">Total Transactions</span>
+            <h4 class="fw-bold text-dark mb-0 mt-1">{{ summary.total_transactions || 0 }}</h4>
+          </div>
+        </div>
+        <div class="col-6 col-md-6 col-xl-6">
+          <div class="card border-0 shadow-sm p-3 border-start border-4 border-success">
+            <span class="text-muted small fw-semibold">Total Revenue Collected</span>
+            <h4 class="fw-bold text-success mb-0 mt-1">{{ formatCurrency(summary.total_revenue) }}</h4>
+          </div>
         </div>
       </div>
-      <div class="col-6 col-md-4 col-xl-2">
-        <div class="card border-0 shadow-sm p-3">
-          <span class="text-muted small">Subtotal</span>
-          <h5 class="fw-bold text-dark mb-0 mt-1">{{ formatCurrency(summary.total_subtotal) }}</h5>
+    }
+    <!-- Case 2: Customer Ledgers Metric Ribbon -->
+    @else if (activeReport === 'customers') {
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="card border-0 shadow-sm p-3">
+            <span class="text-muted small fw-semibold">Total Customers</span>
+            <h5 class="fw-bold text-dark mb-0 mt-1">{{ summary.total_customers || 0 }}</h5>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="card border-0 shadow-sm p-3">
+            <span class="text-muted small fw-semibold">Total Invoices</span>
+            <h5 class="fw-bold text-dark mb-0 mt-1">{{ summary.total_invoices || 0 }}</h5>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-3">
+          <div class="card border-0 shadow-sm p-3">
+            <span class="text-muted small fw-semibold">Total Grand Invoiced</span>
+            <h5 class="fw-bold text-dark mb-0 mt-1">{{ formatCurrency(summary.total_grand) }}</h5>
+          </div>
+        </div>
+        <div class="col-6 col-md-6 col-xl-2">
+          <div class="card border-0 shadow-sm p-3">
+            <span class="text-muted small fw-semibold">Total Collected</span>
+            <h5 class="fw-bold text-success mb-0 mt-1">{{ formatCurrency(summary.total_paid) }}</h5>
+          </div>
+        </div>
+        <div class="col-6 col-md-6 col-xl-3">
+          <div class="card border-0 shadow-sm p-3">
+            <span class="text-muted small fw-semibold">Total Balance Due</span>
+            <h5 class="fw-bold text-danger mb-0 mt-1">{{ formatCurrency(summary.total_balance) }}</h5>
+          </div>
         </div>
       </div>
-      <div class="col-6 col-md-4 col-xl-2">
-        <div class="card border-0 shadow-sm p-3">
-          <span class="text-muted small">Total GST</span>
-          <h5 class="fw-bold text-dark mb-0 mt-1" style="color: #FF6200;">{{ formatCurrency(summary.total_gst) }}</h5>
+    }
+    <!-- Case 3: Items Performance Metric Ribbon -->
+    @else if (activeReport === 'items') {
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+          <div class="card border-0 shadow-sm p-3">
+            <span class="text-muted small fw-semibold">Catalog Items</span>
+            <h5 class="fw-bold text-dark mb-0 mt-1">{{ summary.total_items || 0 }}</h5>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="card border-0 shadow-sm p-3">
+            <span class="text-muted small fw-semibold">Times Invoiced</span>
+            <h5 class="fw-bold text-dark mb-0 mt-1">{{ summary.total_billed_count || 0 }}</h5>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="card border-0 shadow-sm p-3">
+            <span class="text-muted small fw-semibold">Total Units Sold</span>
+            <h5 class="fw-bold text-dark mb-0 mt-1">{{ summary.total_quantity_sold || 0 }}</h5>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="card border-0 shadow-sm p-3 border-start border-4 border-warning">
+            <span class="text-muted small fw-semibold">Total Sales Revenue</span>
+            <h5 class="fw-bold text-orange mb-0 mt-1" style="color: #FF6200;">{{ formatCurrency(summary.total_sales) }}</h5>
+          </div>
         </div>
       </div>
-      <div class="col-6 col-md-4 col-xl-2">
-        <div class="card border-0 shadow-sm p-3">
-          <span class="text-muted small">Grand Total</span>
-          <h5 class="fw-bold text-dark mb-0 mt-1">{{ formatCurrency(summary.total_grand) }}</h5>
+    }
+    <!-- Case 4: Standard Invoices Reports Metric Ribbon -->
+    @else {
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="card border-0 shadow-sm p-3">
+            <span class="text-muted small fw-semibold">Total Invoices</span>
+            <h5 class="fw-bold text-dark mb-0 mt-1">{{ summary.total_invoices || 0 }}</h5>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="card border-0 shadow-sm p-3">
+            <span class="text-muted small fw-semibold">Subtotal</span>
+            <h5 class="fw-bold text-dark mb-0 mt-1">{{ formatCurrency(summary.total_subtotal) }}</h5>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="card border-0 shadow-sm p-3">
+            <span class="text-muted small fw-semibold">Total GST</span>
+            <h5 class="fw-bold text-dark mb-0 mt-1" style="color: #FF6200;">{{ formatCurrency(summary.total_gst) }}</h5>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="card border-0 shadow-sm p-3">
+            <span class="text-muted small fw-semibold">Grand Total</span>
+            <h5 class="fw-bold text-dark mb-0 mt-1">{{ formatCurrency(summary.total_grand) }}</h5>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="card border-0 shadow-sm p-3">
+            <span class="text-muted small fw-semibold">Amount Collected</span>
+            <h5 class="fw-bold text-success mb-0 mt-1">{{ formatCurrency(summary.total_paid) }}</h5>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+          <div class="card border-0 shadow-sm p-3">
+            <span class="text-muted small fw-semibold">Outstanding Balance</span>
+            <h5 class="fw-bold text-danger mb-0 mt-1">{{ formatCurrency(summary.total_balance) }}</h5>
+          </div>
         </div>
       </div>
-      <div class="col-6 col-md-4 col-xl-2">
-        <div class="card border-0 shadow-sm p-3">
-          <span class="text-muted small">Amount Collected</span>
-          <h5 class="fw-bold text-success mb-0 mt-1">{{ formatCurrency(summary.total_paid) }}</h5>
-        </div>
-      </div>
-      <div class="col-6 col-md-4 col-xl-2">
-        <div class="card border-0 shadow-sm p-3">
-          <span class="text-muted small">Outstanding</span>
-          <h5 class="fw-bold text-danger mb-0 mt-1">{{ formatCurrency(summary.total_balance) }}</h5>
-        </div>
-      </div>
-    </div>
+    }
   }
 
   <!-- Main Report Records Table -->
@@ -160,52 +244,232 @@
       @if (loading) {
         <ui-loading text="Aggregating records and compiling figures..."></ui-loading>
       } @else if (pagination && pagination.data && pagination.data.length > 0) {
-        <div class="table-responsive">
-          <table class="table table-hover mb-0 align-middle">
-            <thead>
-              <tr>
-                <th style="width: 45px;">S.No</th>
-                <th>Invoice #</th>
-                <th>Date</th>
-                <th>Customer Name</th>
-                <th>Company Name</th>
-                <th class="text-end">Subtotal</th>
-                <th class="text-end">GST</th>
-                <th class="text-end">Grand Total</th>
-                <th class="text-end">Paid</th>
-                <th class="text-end">Balance</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of pagination.data; track row.id; let idx = $index) {
+
+        <!-- 1. Revenue Collections Table -->
+        @if (activeReport === 'revenue') {
+          <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+              <thead class="table-light">
                 <tr>
-                  <td class="text-muted small">
-                    {{ ((pagination.current_page - 1) * pagination.per_page) + idx + 1 }}
+                  <th style="width: 45px;">S.No</th>
+                  <th>Payment #</th>
+                  <th>Date</th>
+                  <th>Invoice #</th>
+                  <th>Customer Name</th>
+                  <th>Company Name</th>
+                  <th>Method</th>
+                  <th>Reference #</th>
+                  <th class="text-end">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of pagination.data; track row.id; let idx = $index) {
+                  <tr>
+                    <td class="text-muted small">
+                      {{ ((pagination.current_page - 1) * pagination.per_page) + idx + 1 }}
+                    </td>
+                    <td class="fw-bold" style="color: #FF6200;">
+                      {{ row.payment_number }}
+                    </td>
+                    <td>{{ formatDate(row.payment_date) }}</td>
+                    <td class="fw-semibold">{{ row.invoice?.invoice_number || '-' }}</td>
+                    <td>{{ row.invoice?.customer_name || '-' }}</td>
+                    <td><span class="small text-secondary">{{ row.invoice?.company_name || '-' }}</span></td>
+                    <td><span class="badge bg-light text-dark border">{{ row.payment_method }}</span></td>
+                    <td><span class="small text-muted font-monospace">{{ row.reference_number || '-' }}</span></td>
+                    <td class="text-end fw-bold text-success">{{ formatCurrency(row.amount) }}</td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot class="report-total-row">
+                <tr class="align-middle">
+                  <td colspan="8" class="text-end text-uppercase fw-bold py-3 text-dark">
+                    TOTAL REVENUE ({{ summary?.total_transactions || pagination.total }} TRANSACTIONS):
                   </td>
-                  <td class="fw-bold" style="color: #FF6200;">
-                    {{ row.invoice_number }}
-                  </td>
-                  <td>{{ formatDate(row.invoice_date) }}</td>
-                  <td class="fw-semibold text-dark">{{ row.customer_name }}</td>
-                  <td><span class="small text-secondary">{{ row.company_name || '-' }}</span></td>
-                  <td class="text-end">{{ formatCurrency(row.subtotal) }}</td>
-                  <td class="text-end">{{ formatCurrency(row.total_gst) }}</td>
-                  <td class="text-end fw-bold text-dark">{{ formatCurrency(row.grand_total) }}</td>
-                  <td class="text-end text-success">{{ formatCurrency(row.amount_paid) }}</td>
-                  <td class="text-end fw-bold" [class.text-danger]="row.balance_due > 0">
-                    {{ formatCurrency(row.balance_due) }}
-                  </td>
-                  <td>
-                    <span [class]="'badge ' + getBadgeClass(row.status)">
-                      {{ row.status }}
-                    </span>
+                  <td class="text-end py-3 fw-bold text-success fs-6">
+                    {{ formatCurrency(summary?.total_revenue) }}
                   </td>
                 </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+              </tfoot>
+            </table>
+          </div>
+        }
+
+        <!-- 2. Customer Ledgers Table -->
+        @else if (activeReport === 'customers') {
+          <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 45px;">S.No</th>
+                  <th>Customer Name</th>
+                  <th>Company Name</th>
+                  <th>City</th>
+                  <th>Phone</th>
+                  <th class="text-center">Invoices</th>
+                  <th class="text-end">Total Invoiced</th>
+                  <th class="text-end">Amount Paid</th>
+                  <th class="text-end">Balance Due</th>
+                  <th>Payment Method</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of pagination.data; track row.id; let idx = $index) {
+                  <tr>
+                    <td class="text-muted small">
+                      {{ ((pagination.current_page - 1) * pagination.per_page) + idx + 1 }}
+                    </td>
+                    <td class="fw-bold text-dark">{{ row.full_name || (row.first_name + ' ' + row.last_name) }}</td>
+                    <td><span class="small text-secondary">{{ row.company_name || '-' }}</span></td>
+                    <td>{{ row.city || '-' }}</td>
+                    <td><span class="small text-muted">{{ row.primary_phone || (row.phones?.[0]?.phone_number || '-') }}</span></td>
+                    <td class="text-center fw-semibold">
+                      <span class="badge bg-light text-dark border">{{ row.invoices_count || 0 }}</span>
+                    </td>
+                    <td class="text-end fw-bold text-dark">{{ formatCurrency(row.invoices_sum_grand_total || 0) }}</td>
+                    <td class="text-end text-success">{{ formatCurrency(row.invoices_sum_amount_paid || 0) }}</td>
+                    <td class="text-end fw-bold" [class.text-danger]="(row.invoices_sum_balance_due || 0) > 0">
+                      {{ formatCurrency(row.invoices_sum_balance_due || 0) }}
+                    </td>
+                    <td><span class="badge bg-light text-secondary border">{{ row.payment_method }}</span></td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot class="report-total-row">
+                <tr class="align-middle">
+                  <td colspan="5" class="text-end text-uppercase fw-bold py-3 text-dark">
+                    TOTAL ({{ summary?.total_customers || pagination.total }} CUSTOMERS):
+                  </td>
+                  <td class="text-center py-3 fw-bold text-dark">{{ summary?.total_invoices || 0 }}</td>
+                  <td class="text-end py-3 fw-bold text-dark fs-6">{{ formatCurrency(summary?.total_grand) }}</td>
+                  <td class="text-end py-3 fw-bold text-success">{{ formatCurrency(summary?.total_paid) }}</td>
+                  <td class="text-end py-3 fw-bold text-danger">{{ formatCurrency(summary?.total_balance) }}</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        }
+
+        <!-- 3. Item Performance Table -->
+        @else if (activeReport === 'items') {
+          <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 45px;">S.No</th>
+                  <th>Item Name</th>
+                  <th class="text-end">Unit Cost</th>
+                  <th class="text-center">GST Rate</th>
+                  <th class="text-center">Times Invoiced</th>
+                  <th class="text-center">Total Qty Sold</th>
+                  <th class="text-end">Total Sales Revenue</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of pagination.data; track row.id; let idx = $index) {
+                  <tr>
+                    <td class="text-muted small">
+                      {{ ((pagination.current_page - 1) * pagination.per_page) + idx + 1 }}
+                    </td>
+                    <td class="fw-bold text-dark">{{ row.item_name }}</td>
+                    <td class="text-end">{{ formatCurrency(row.item_cost) }}</td>
+                    <td class="text-center">{{ row.gst_percentage }}%</td>
+                    <td class="text-center">
+                      <span class="badge bg-light text-dark border">{{ row.invoice_items_count || 0 }}</span>
+                    </td>
+                    <td class="text-center fw-semibold">{{ row.invoice_items_sum_quantity || 0 }}</td>
+                    <td class="text-end fw-bold" style="color: #FF6200;">
+                      {{ formatCurrency(row.invoice_items_sum_line_total || 0) }}
+                    </td>
+                    <td>
+                      <span [class]="'badge ' + getBadgeClass(row.status)">
+                        {{ row.status }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot class="report-total-row">
+                <tr class="align-middle">
+                  <td colspan="4" class="text-end text-uppercase fw-bold py-3 text-dark">
+                    TOTAL ({{ summary?.total_items || pagination.total }} ITEMS):
+                  </td>
+                  <td class="text-center py-3 fw-bold text-dark">{{ summary?.total_billed_count || 0 }}</td>
+                  <td class="text-center py-3 fw-bold text-dark">{{ summary?.total_quantity_sold || 0 }}</td>
+                  <td class="text-end py-3 fw-bold fs-6" style="color: #FF6200;">
+                    {{ formatCurrency(summary?.total_sales) }}
+                  </td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        }
+
+        <!-- 4. Standard Invoices Reports (Daily, Weekly, Monthly, Yearly, Outstanding, Paid, Unpaid, GST) -->
+        @else {
+          <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 45px;">S.No</th>
+                  <th>Invoice #</th>
+                  <th>Date</th>
+                  <th>Customer Name</th>
+                  <th>Company Name</th>
+                  <th class="text-end">Subtotal</th>
+                  <th class="text-end">GST</th>
+                  <th class="text-end">Grand Total</th>
+                  <th class="text-end">Paid</th>
+                  <th class="text-end">Balance</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of pagination.data; track row.id; let idx = $index) {
+                  <tr>
+                    <td class="text-muted small">
+                      {{ ((pagination.current_page - 1) * pagination.per_page) + idx + 1 }}
+                    </td>
+                    <td class="fw-bold" style="color: #FF6200;">
+                      {{ row.invoice_number }}
+                    </td>
+                    <td>{{ formatDate(row.invoice_date) }}</td>
+                    <td class="fw-semibold text-dark">{{ row.customer_name }}</td>
+                    <td><span class="small text-secondary">{{ row.company_name || '-' }}</span></td>
+                    <td class="text-end">{{ formatCurrency(row.subtotal) }}</td>
+                    <td class="text-end">{{ formatCurrency(row.total_gst) }}</td>
+                    <td class="text-end fw-bold text-dark">{{ formatCurrency(row.grand_total) }}</td>
+                    <td class="text-end text-success">{{ formatCurrency(row.amount_paid) }}</td>
+                    <td class="text-end fw-bold" [class.text-danger]="row.balance_due > 0">
+                      {{ formatCurrency(row.balance_due) }}
+                    </td>
+                    <td>
+                      <span [class]="'badge ' + getBadgeClass(row.status)">
+                        {{ row.status }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot class="report-total-row">
+                <tr class="align-middle">
+                  <td colspan="5" class="text-end text-uppercase fw-bold py-3 text-dark">
+                    TOTAL ({{ summary?.total_invoices || pagination.total }} INVOICES):
+                  </td>
+                  <td class="text-end py-3 fw-bold text-dark">{{ formatCurrency(summary?.total_subtotal) }}</td>
+                  <td class="text-end py-3 fw-bold" style="color: #FF6200;">{{ formatCurrency(summary?.total_gst) }}</td>
+                  <td class="text-end py-3 fw-bold text-dark fs-6">{{ formatCurrency(summary?.total_grand) }}</td>
+                  <td class="text-end py-3 fw-bold text-success">{{ formatCurrency(summary?.total_paid) }}</td>
+                  <td class="text-end py-3 fw-bold text-danger">{{ formatCurrency(summary?.total_balance) }}</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        }
 
         <div class="px-4">
           <ui-pagination

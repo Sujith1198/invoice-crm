@@ -65,16 +65,133 @@
             </div>
 
             <div class="col-12 col-md-6">
-              <label class="form-label">Assign to Customer (Optional)</label>
-              <select class="form-select" formControlName="customer_id">
-                <option [ngValue]="null">-- General / Available for All Customers --</option>
-                @for (cust of customers; track cust.id) {
-                  <option [ngValue]="cust.id">
-                    {{ cust.full_name || (cust.first_name + ' ' + cust.last_name) }} {{ cust.company_name ? '(' + cust.company_name + ')' : '' }}
-                  </option>
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <label class="form-label mb-0 fw-semibold">Assign to Customer (Optional)</label>
+                @if (selectedCustomer) {
+                  <button
+                    type="button"
+                    class="btn btn-link btn-sm p-0 text-decoration-none text-danger small"
+                    (click)="clearSelectedCustomer($event)"
+                    title="Remove assignment and make general"
+                  >
+                    ✕ Clear Assignment
+                  </button>
                 }
-              </select>
-              <div class="form-text small">Associate this item/service with a specific customer for customer-based pricing and invoicing.</div>
+              </div>
+
+              <!-- Customer Autocomplete Search Input -->
+              <div class="position-relative customer-autocomplete-container">
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-muted">
+                    @if (selectedCustomer) {
+                      <span class="text-warning">👤</span>
+                    } @else {
+                      <span>🔍</span>
+                    }
+                  </span>
+                  <input
+                    type="text"
+                    class="form-control border-start-0 customer-search-input"
+                    [class.border-warning]="selectedCustomer"
+                    [placeholder]="selectedCustomer ? 'Assigned: ' + (selectedCustomer.full_name || selectedCustomer.first_name) : 'Search customer by name, company, email...'"
+                    [(ngModel)]="customerSearchQuery"
+                    [ngModelOptions]="{standalone: true}"
+                    (input)="onCustomerSearchInput()"
+                    (focus)="onCustomerFocus()"
+                    (blur)="closeCustomerDropdown()"
+                    autocomplete="off"
+                  />
+                  @if (selectedCustomer || customerSearchQuery) {
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary border-start-0 bg-white"
+                      (click)="clearSelectedCustomer($event)"
+                      title="Clear selection"
+                    >
+                      ✕
+                    </button>
+                  }
+                </div>
+
+                <!-- Floating Dropdown -->
+                @if (showCustomerDropdown) {
+                  <div class="customer-autocomplete-dropdown shadow-lg rounded-3 border">
+                    <!-- Option 1: General / Available for All Customers -->
+                    <div
+                      class="autocomplete-item p-2 px-3 border-bottom d-flex align-items-center justify-content-between"
+                      [class.bg-light]="!selectedCustomer"
+                      (mousedown)="selectCustomer(null)"
+                    >
+                      <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-secondary-subtle text-secondary border">General</span>
+                        <div>
+                          <div class="fw-bold text-dark small">-- General / Available for All Customers --</div>
+                          <div class="text-muted" style="font-size: 11px;">Standard catalog item available for any client invoice</div>
+                        </div>
+                      </div>
+                      @if (!selectedCustomer) {
+                        <span class="text-success fw-bold small">✓ Active</span>
+                      }
+                    </div>
+
+                    <!-- Filtered Customer List -->
+                    @if (customerSearchResults.length > 0) {
+                      <div class="px-3 py-1 bg-light border-bottom text-muted text-uppercase fw-bold" style="font-size: 10px; letter-spacing: 0.5px;">
+                        Matching Customers ({{ customerSearchResults.length }})
+                      </div>
+                      @for (cust of customerSearchResults; track cust.id) {
+                        <div
+                          class="autocomplete-item p-2 px-3 border-bottom"
+                          [class.selected-cust]="selectedCustomer?.id === cust.id"
+                          (mousedown)="selectCustomer(cust)"
+                        >
+                          <div class="d-flex justify-content-between align-items-start">
+                            <strong class="text-dark">{{ cust.full_name || (cust.first_name + ' ' + cust.last_name) }}</strong>
+                            <span class="badge bg-light text-dark border small" style="font-size: 11px;">{{ cust.payment_method }}</span>
+                          </div>
+                          <div class="small text-muted mt-1">
+                            @if (cust.company_name) {
+                              <span class="text-secondary fw-semibold">🏢 {{ cust.company_name }}</span> • 
+                            }
+                            @if (cust.primary_phone || (cust.phones && cust.phones[0])) {
+                              <span>📞 {{ cust.primary_phone || cust.phones[0].phone_number }}</span> • 
+                            }
+                            <span>✉️ {{ cust.email }}</span>
+                          </div>
+                          @if (cust.city) {
+                            <div class="small text-muted" style="font-size: 11px;">📍 {{ cust.city }}{{ cust.country ? ', ' + cust.country : '' }}</div>
+                          }
+                        </div>
+                      }
+                    } @else if (customerSearchQuery.trim()) {
+                      <div class="p-3 text-center text-muted small">
+                        No customer found matching "<strong>{{ customerSearchQuery }}</strong>".
+                        <div class="mt-1">
+                          <a routerLink="/customers/create" target="_blank" class="text-orange text-decoration-none fw-semibold">
+                            + Add New Customer
+                          </a>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+
+              <!-- Customer Badge if assigned -->
+              @if (selectedCustomer) {
+                <div class="selected-customer-pill mt-2 p-2 px-3 rounded-2 border d-flex justify-content-between align-items-center">
+                  <div class="small">
+                    <span class="badge bg-warning text-dark me-2">Assigned</span>
+                    <strong class="text-dark">{{ selectedCustomer.full_name || (selectedCustomer.first_name + ' ' + selectedCustomer.last_name) }}</strong>
+                    @if (selectedCustomer.company_name) {
+                      <span class="text-muted ms-1">({{ selectedCustomer.company_name }})</span>
+                    }
+                  </div>
+                  <span class="small text-muted font-monospace">ID #{{ selectedCustomer.id }}</span>
+                </div>
+              }
+
+              <div class="form-text small mt-1">Associate this item/service with a specific customer for customer-based pricing and invoicing.</div>
             </div>
 
             <div class="col-12 col-md-3">

@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { CustomerService, ItemService, ToastService } from '@invoice-mgmt/shared-services';
 import { Customer } from '@invoice-mgmt/shared-models';
@@ -9,7 +9,7 @@ import { LoadingSpinnerComponent } from '@invoice-mgmt/shared-ui';
 @Component({
   selector: 'app-item-form',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, LoadingSpinnerComponent],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, FormsModule, LoadingSpinnerComponent],
   templateUrl: './item-form.component.html',
   styleUrls: ['./item-form.component.scss']
 })
@@ -27,7 +27,12 @@ export class ItemFormComponent implements OnInit {
   loadingItem = false;
   saving = false;
   submitted = false;
+
   customers: Customer[] = [];
+  customerSearchQuery = '';
+  customerSearchResults: Customer[] = [];
+  selectedCustomer: Customer | null = null;
+  showCustomerDropdown = false;
 
   itemForm: FormGroup = this.fb.group({
     customer_id: [null],
@@ -60,6 +65,16 @@ export class ItemFormComponent implements OnInit {
     this.customerService.getCustomers({ per_page: 100 }).subscribe({
       next: (res) => {
         this.customers = res?.data?.data || [];
+        this.customerSearchResults = this.customers.slice(0, 15);
+
+        // If form already has a customer_id, resolve it
+        const currentCustId = this.itemForm.get('customer_id')?.value;
+        if (currentCustId && !this.selectedCustomer) {
+          const match = this.customers.find(c => c.id === currentCustId);
+          if (match) {
+            this.selectCustomer(match);
+          }
+        }
         this.cdr.detectChanges();
       },
       error: () => {}
@@ -73,6 +88,24 @@ export class ItemFormComponent implements OnInit {
         try {
           if (res?.data) {
             this.itemForm.patchValue(res.data);
+            if (res.data.customer_id) {
+              const match = this.customers.find(c => c.id === res.data.customer_id);
+              if (match) {
+                this.selectCustomer(match);
+              } else if (res.data.customer) {
+                this.selectCustomer(res.data.customer);
+              } else {
+                this.customerService.getCustomer(res.data.customer_id).subscribe({
+                  next: (cRes) => {
+                    if (cRes?.data?.customer) {
+                      this.selectCustomer(cRes.data.customer);
+                    }
+                  }
+                });
+              }
+            } else {
+              this.selectCustomer(null);
+            }
           }
         } finally {
           this.loadingItem = false;
@@ -86,6 +119,80 @@ export class ItemFormComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  onCustomerFocus() {
+    this.showCustomerDropdown = true;
+    if (!this.customerSearchQuery.trim()) {
+      this.customerSearchResults = this.customers.slice(0, 15);
+    }
+  }
+
+  onCustomerSearchInput() {
+    this.showCustomerDropdown = true;
+    const q = this.customerSearchQuery.trim().toLowerCase();
+    if (!q) {
+      this.customerSearchResults = this.customers.slice(0, 15);
+      return;
+    }
+
+    // Filter local list
+    this.customerSearchResults = this.customers.filter(c => {
+      const fullName = (c.full_name || `${c.first_name} ${c.last_name}`).toLowerCase();
+      const company = (c.company_name || '').toLowerCase();
+      const email = (c.email || '').toLowerCase();
+      const phone = (c.primary_phone || (c.phones?.[0]?.phone_number || '')).toLowerCase();
+      const city = (c.city || '').toLowerCase();
+      return fullName.includes(q) || company.includes(q) || email.includes(q) || phone.includes(q) || city.includes(q);
+    }).slice(0, 15);
+
+    // If query is longer than 1 char, also search backend
+    if (q.length >= 2) {
+      this.customerService.searchCustomers(q).subscribe({
+        next: (res) => {
+          if (res?.data && res.data.length > 0) {
+            // Merge with local results ensuring no duplicates
+            const existingIds = new Set(this.customerSearchResults.map(c => c.id));
+            for (const item of res.data) {
+              if (!existingIds.has(item.id)) {
+                this.customerSearchResults.push(item);
+                existingIds.add(item.id);
+              }
+            }
+          }
+          this.cdr.detectChanges();
+        }
+      });
+    }
+  }
+
+  selectCustomer(cust: Customer | null) {
+    if (cust) {
+      this.selectedCustomer = cust;
+      this.itemForm.patchValue({ customer_id: cust.id });
+      this.customerSearchQuery = `${cust.full_name || (cust.first_name + ' ' + cust.last_name)}${cust.company_name ? ' (' + cust.company_name + ')' : ''}`;
+    } else {
+      this.selectedCustomer = null;
+      this.itemForm.patchValue({ customer_id: null });
+      this.customerSearchQuery = '';
+    }
+    this.showCustomerDropdown = false;
+    this.cdr.detectChanges();
+  }
+
+  clearSelectedCustomer(event?: MouseEvent) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    this.selectCustomer(null);
+  }
+
+  closeCustomerDropdown() {
+    setTimeout(() => {
+      this.showCustomerDropdown = false;
+      this.cdr.detectChanges();
+    }, 200);
   }
 
   onSubmit() {
@@ -108,18 +215,20 @@ export class ItemFormComponent implements OnInit {
         error: (err) => {
           this.saving = false;
           this.toastService.error(err.error?.message || 'Failed to update item.');
+          this.cdr.detectChanges();
         }
       });
     } else {
       this.itemService.createItem(payload).subscribe({
         next: () => {
           this.saving = false;
-          this.toastService.success('Catalog item registered successfully.');
+          this.toastService.success('New catalog item registered successfully.');
           this.router.navigate(['/items']);
         },
         error: (err) => {
           this.saving = false;
           this.toastService.error(err.error?.message || 'Failed to create item.');
+          this.cdr.detectChanges();
         }
       });
     }

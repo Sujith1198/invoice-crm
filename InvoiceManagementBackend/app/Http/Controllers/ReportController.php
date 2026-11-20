@@ -175,7 +175,7 @@ class ReportController extends Controller
 
     public function revenue(Request $request): JsonResponse
     {
-        $query = Payment::with('invoice');
+        $query = Payment::with(['invoice.customer']);
 
         if ($request->filled('from_date')) {
             $query->whereDate('payment_date', '>=', $request->from_date);
@@ -187,6 +187,25 @@ class ReportController extends Controller
 
         if ($request->filled('payment_method')) {
             $query->where('payment_method', $request->payment_method);
+        }
+
+        if ($request->filled('customer_id')) {
+            $query->whereHas('invoice', function ($iq) use ($request) {
+                $iq->where('customer_id', $request->customer_id);
+            });
+        }
+
+        if ($request->filled('search')) {
+            $s = trim($request->search);
+            $query->where(function ($q) use ($s) {
+                $q->where('payment_number', 'like', "%{$s}%")
+                  ->orWhere('reference_number', 'like', "%{$s}%")
+                  ->orWhereHas('invoice', function ($iq) use ($s) {
+                      $iq->where('invoice_number', 'like', "%{$s}%")
+                         ->orWhere('customer_name', 'like', "%{$s}%")
+                         ->orWhere('company_name', 'like', "%{$s}%");
+                  });
+            });
         }
 
         $totalRevenue = (float) (clone $query)->sum('amount');
@@ -222,10 +241,29 @@ class ReportController extends Controller
             });
         }
 
+        $cloned = clone $query;
+        $totalCustomers = (int) $cloned->count();
+
+        $customerIds = (clone $query)->pluck('id');
+        $invoicesQuery = Invoice::whereIn('customer_id', $customerIds);
+        $totalInvoices = (int) (clone $invoicesQuery)->count();
+        $totalGrand = round((float) (clone $invoicesQuery)->sum('grand_total'), 2);
+        $totalPaid = round((float) (clone $invoicesQuery)->sum('amount_paid'), 2);
+        $totalBalance = round((float) (clone $invoicesQuery)->sum('balance_due'), 2);
+
+        $summary = [
+            'total_customers' => $totalCustomers,
+            'total_invoices' => $totalInvoices,
+            'total_grand' => $totalGrand,
+            'total_paid' => $totalPaid,
+            'total_balance' => $totalBalance,
+        ];
+
         $customers = $query->orderBy('invoices_sum_grand_total', 'desc')->paginate($request->get('per_page', 10));
 
         return response()->json([
             'status' => 'success',
+            'summary' => $summary,
             'data' => $customers,
         ]);
     }
@@ -241,10 +279,27 @@ class ReportController extends Controller
             $query->where('item_name', 'like', "%{$s}%");
         }
 
+        $cloned = clone $query;
+        $totalItems = (int) $cloned->count();
+
+        $itemIds = (clone $query)->pluck('id');
+        $invoiceItemsQuery = InvoiceItem::whereIn('item_id', $itemIds);
+        $totalBilledCount = (int) (clone $invoiceItemsQuery)->count();
+        $totalQtySold = (float) (clone $invoiceItemsQuery)->sum('quantity');
+        $totalSales = round((float) (clone $invoiceItemsQuery)->sum('line_total'), 2);
+
+        $summary = [
+            'total_items' => $totalItems,
+            'total_billed_count' => $totalBilledCount,
+            'total_quantity_sold' => $totalQtySold,
+            'total_sales' => $totalSales,
+        ];
+
         $items = $query->orderBy('invoice_items_sum_line_total', 'desc')->paginate($request->get('per_page', 10));
 
         return response()->json([
             'status' => 'success',
+            'summary' => $summary,
             'data' => $items,
         ]);
     }

@@ -2,4 +2,45 @@
   .required-star {
     color: #dc3545;
   }
+
+  .customer-autocomplete-container {
+    position: relative;
+
+    .customer-autocomplete-dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: #ffffff;
+      max-height: 290px;
+      overflow-y: auto;
+      z-index: 1050;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      border: 1px solid #FFE0B2;
+      border-radius: 8px;
+    }
+
+    .autocomplete-item {
+      cursor: pointer;
+      transition: background-color 0.15s ease-in-out;
+
+      &:hover {
+        background-color: #FFF8E7 !important;
+      }
+
+      &.selected-cust {
+        background-color: #FFF3D6;
+        border-left: 3px solid #FFAB00;
+      }
+    }
+  }
+
+  .selected-customer-pill {
+    background-color: #FFFDF8;
+    border-color: #FFE6B3 !important;
+  }
+
+  .text-orange {
+    color: #FF6200 !important;
+  }
 }

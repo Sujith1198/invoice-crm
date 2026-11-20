@@ -140,25 +140,112 @@ export class ReportsComponent implements OnInit {
       return;
     }
 
-    const headers = [
-      'Invoice #', 'Date', 'Customer Name', 'Company Name',
-      'Subtotal', 'GST', 'Grand Total', 'Amount Paid', 'Balance Due', 'Status'
-    ];
+    let headers: string[] = [];
+    let rows: any[][] = [];
 
-    const rows = this.pagination.data.map(item => [
-      item.invoice_number || '',
-      item.invoice_date || '',
-      item.customer_name || '',
-      item.company_name || '',
-      item.subtotal || 0,
-      item.total_gst || 0,
-      item.grand_total || 0,
-      item.amount_paid || 0,
-      item.balance_due || 0,
-      item.status || '',
-    ]);
+    if (this.activeReport === 'revenue') {
+      headers = [
+        'Payment #', 'Payment Date', 'Invoice #', 'Customer Name', 'Company Name',
+        'Payment Method', 'Reference #', 'Amount (INR)'
+      ];
+      rows = this.pagination.data.map(item => [
+        item.payment_number || '',
+        item.payment_date || '',
+        item.invoice?.invoice_number || '',
+        item.invoice?.customer_name || '',
+        item.invoice?.company_name || '',
+        item.payment_method || '',
+        item.reference_number || '',
+        item.amount || 0,
+      ]);
+      // Append Total Row
+      rows.push([
+        `TOTAL REVENUE (${this.summary?.total_transactions || this.pagination.total} Transactions)`,
+        '', '', '', '', '', '',
+        this.summary?.total_revenue || 0
+      ]);
+    } else if (this.activeReport === 'customers') {
+      headers = [
+        'Customer Name', 'Company Name', 'City', 'Primary Phone', 'Email',
+        'Invoices Count', 'Grand Total Invoiced (INR)', 'Amount Paid (INR)', 'Balance Due (INR)', 'Payment Method'
+      ];
+      rows = this.pagination.data.map(item => [
+        item.full_name || (item.first_name + ' ' + item.last_name),
+        item.company_name || '',
+        item.city || '',
+        item.primary_phone || (item.phones?.[0]?.phone_number || ''),
+        item.email || '',
+        item.invoices_count || 0,
+        item.invoices_sum_grand_total || 0,
+        item.invoices_sum_amount_paid || 0,
+        item.invoices_sum_balance_due || 0,
+        item.payment_method || '',
+      ]);
+      // Append Total Row
+      rows.push([
+        `TOTAL (${this.summary?.total_customers || this.pagination.total} Customers)`,
+        '', '', '', '',
+        this.summary?.total_invoices || 0,
+        this.summary?.total_grand || 0,
+        this.summary?.total_paid || 0,
+        this.summary?.total_balance || 0,
+        ''
+      ]);
+    } else if (this.activeReport === 'items') {
+      headers = [
+        'Item Name', 'Unit Cost (INR)', 'GST Rate (%)', 'Times Invoiced',
+        'Total Quantity Sold', 'Total Sales Revenue (INR)', 'Status'
+      ];
+      rows = this.pagination.data.map(item => [
+        item.item_name || '',
+        item.item_cost || 0,
+        (item.gst_percentage || 0) + '%',
+        item.invoice_items_count || 0,
+        item.invoice_items_sum_quantity || 0,
+        item.invoice_items_sum_line_total || 0,
+        item.status || '',
+      ]);
+      // Append Total Row
+      rows.push([
+        `TOTAL (${this.summary?.total_items || this.pagination.total} Items)`,
+        '', '',
+        this.summary?.total_billed_count || 0,
+        this.summary?.total_quantity_sold || 0,
+        this.summary?.total_sales || 0,
+        ''
+      ]);
+    } else {
+      // Invoices-based reports
+      headers = [
+        'Invoice #', 'Date', 'Customer Name', 'Company Name',
+        'Subtotal (INR)', 'GST (INR)', 'Grand Total (INR)', 'Amount Paid (INR)', 'Balance Due (INR)', 'Status'
+      ];
+      rows = this.pagination.data.map(item => [
+        item.invoice_number || '',
+        item.invoice_date || '',
+        item.customer_name || '',
+        item.company_name || '',
+        item.subtotal || 0,
+        item.total_gst || 0,
+        item.grand_total || 0,
+        item.amount_paid || 0,
+        item.balance_due || 0,
+        item.status || '',
+      ]);
+      // Append Total Row
+      rows.push([
+        `TOTAL (${this.summary?.total_invoices || this.pagination.total} Invoices)`,
+        '', '', '',
+        this.summary?.total_subtotal || 0,
+        this.summary?.total_gst || 0,
+        this.summary?.total_grand || 0,
+        this.summary?.total_paid || 0,
+        this.summary?.total_balance || 0,
+        ''
+      ]);
+    }
 
     exportToCsv(`Orange-Invoice-Report-${this.activeReport}-${new Date().toISOString().substring(0, 10)}`, headers, rows);
-    this.toastService.success('Report exported to CSV successfully.');
+    this.toastService.success('Report exported to CSV with totals successfully.');
   }
 }
